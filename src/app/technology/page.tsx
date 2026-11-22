@@ -230,7 +230,7 @@ export default function TechnologyPage() {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Select a component</h3>
                 <p className="text-muted text-sm leading-relaxed">
-                  Click on any numbered hotspot on the exploded view to learn about that component's function and design.
+                  Click on any numbered hotspot on the exploded view to learn about that component&apos;s function and design.
                 </p>
               </div>
             )}
@@ -297,7 +297,7 @@ export default function TechnologyPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="ff-heading-lg mb-4">Ready to change mealtime?</h2>
           <p className="ff-body-lg text-muted mb-8 max-w-lg mx-auto">
-            Choose your tier and start enriching your dog's feeding experience today.
+            Choose your tier and start enriching your dog&apos;s feeding experience today.
           </p>
           <Button variant="primary" size="lg" asChild>
             <Link href="/product">Shop Feast Forge</Link>

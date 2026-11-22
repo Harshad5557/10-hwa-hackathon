@@ -67,7 +67,7 @@ export default function HowItWorksPage() {
             <span className="text-amber-400 text-xs font-bold tracking-wider uppercase mb-2 block">How it works</span>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">Four simple steps. Endless enrichment.</h1>
             <p className="text-lg text-muted max-w-2xl mx-auto">
-              From filling the hopper to your dog's first solve, see how Feast Forge transforms feeding time.
+              From filling the hopper to your dog&apos;s first solve, see how Feast Forge transforms feeding time.
             </p>
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function HowItWorksPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="ff-heading-lg mb-4">Ready to change mealtime?</h2>
           <p className="ff-body-lg text-muted mb-8 max-w-lg mx-auto">
-            Choose your tier and start enriching your dog's feeding experience today.
+            Choose your tier and start enriching your dog&apos;s feeding experience today.
           </p>
           <Button variant="primary" size="lg" asChild>
             <Link href="/product">Shop Feast Forge</Link>

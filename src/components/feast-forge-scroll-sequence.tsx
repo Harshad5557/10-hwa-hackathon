@@ -30,7 +30,6 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
@@ -48,9 +47,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
       images[0] = firstImg;
       loaded++;
       setLoadedCount(loaded);
-      if (canvasRef.current) {
-        drawFrame(0);
-      }
+      // Draw will happen in the resize/scroll effect
     };
     images[0] = firstImg;
 
@@ -151,6 +148,14 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     };
   }, [drawFrame, reducedMotion]);
 
+  // Draw first frame on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      drawFrame(0);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [drawFrame]);
+
   // Reduced motion: show static assembled frame
   useEffect(() => {
     if (reducedMotion) {
@@ -167,6 +172,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
 
   // Determine active chapter text
   const [activeChapter, setActiveChapter] = useState(CHAPTERS[0]);
+  const [progress, setProgress] = useState(0);
   useEffect(() => {
     if (reducedMotion) return;
     const handleScroll = () => {
@@ -174,11 +180,12 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
       const rect = containerRef.current.getBoundingClientRect();
       const scrollHeight = containerRef.current.scrollHeight - window.innerHeight;
       const scrolled = -rect.top;
-      const progress = Math.max(0, Math.min(1, scrolled / scrollHeight));
+      const p = Math.max(0, Math.min(1, scrolled / scrollHeight));
+      setProgress(p);
 
       let chapter = CHAPTERS[0];
       for (let i = CHAPTERS.length - 1; i >= 0; i--) {
-        if (progress >= CHAPTERS[i].at) {
+        if (p >= CHAPTERS[i].at) {
           chapter = CHAPTERS[i];
           break;
         }
@@ -186,6 +193,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
       setActiveChapter(chapter);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, [reducedMotion]);
 
@@ -232,7 +240,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
             <div
               className="h-full bg-amber-500 transition-all duration-100"
               style={{
-                width: `${isReady ? (currentFrameRef.current / (FRAME_COUNT - 1)) * 100 : 0}%`,
+                width: `${isReady ? progress * 100 : 0}%`,
               }}
             />
           </div>

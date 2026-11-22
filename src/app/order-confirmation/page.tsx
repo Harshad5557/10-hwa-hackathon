@@ -26,12 +26,18 @@ export default function OrderConfirmationPage() {
     const saved = sessionStorage.getItem("ff-order");
     if (saved) {
       try {
-        setOrder(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        // Use a microtask to avoid synchronous setState in effect
+        queueMicrotask(() => setOrder(parsed));
       } catch {
-        setOrder(null);
+        queueMicrotask(() => setOrder(null));
       }
+    } else {
+      queueMicrotask(() => setLoading(false));
     }
-    setLoading(false);
+    if (saved) {
+      queueMicrotask(() => setLoading(false));
+    }
   }, []);
 
   if (loading) {
@@ -50,7 +56,7 @@ export default function OrderConfirmationPage() {
       <div className="relative py-24 lg:py-32">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl font-bold text-white mb-6">No order found</h1>
-          <p className="text-muted text-lg mb-10">It looks like you haven't placed an order yet.</p>
+          <p className="text-muted text-lg mb-10">It looks like you haven&apos;t placed an order yet.</p>
           <Link
             href="/product"
             className="inline-flex items-center gap-2 px-10 py-4 bg-amber-500 text-charcoal font-bold rounded-full text-lg hover:bg-white transition-all duration-300"
@@ -70,7 +76,7 @@ export default function OrderConfirmationPage() {
             <CheckCircle className="w-8 h-8 text-amber-500" />
           </div>
           <h1 className="text-4xl font-bold text-white mb-4">Order confirmed</h1>
-          <p className="text-muted text-lg mb-10">Thank you for your order. We're getting your Feast Forge ready to ship.</p>
+          <p className="text-muted text-lg mb-10">Thank you for your order. We&apos;re getting your Feast Forge ready to ship.</p>
 
           {/* Order info */}
           <div className="grid md:grid-cols-2 gap-6 mb-8 text-left">

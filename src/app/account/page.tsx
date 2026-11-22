@@ -153,7 +153,7 @@ export default function AccountPage() {
                     Sign in
                   </Button>
                   <p className="text-center text-sm text-muted">
-                    Don't have an account?{" "}
+                    Don&apos;t have an account?{" "}
                     <button onClick={() => setActiveTab("register")} className="text-amber-400 hover:text-amber-300">
                       Register
                     </button>

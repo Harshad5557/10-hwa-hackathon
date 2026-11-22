@@ -110,7 +110,7 @@ export function ShatteredProductViewer({ className, scrollProgress = 0 }: Shatte
     );
     motorGroup.position.set(0, 0, 0);
     scene.add(motorGroup);
-    parts.push({ mesh: motorGroup as any, original: new THREE.Vector3(0, 0, 0), offset: new THREE.Vector3(0, -1.4, 0) });
+    parts.push({ mesh: motorGroup as unknown as THREE.Mesh, original: new THREE.Vector3(0, 0, 0), offset: new THREE.Vector3(0, -1.4, 0) });
 
     // 5. Maze Layer 3 (largest, lowest disk)
     const layer3 = addPart(
@@ -166,7 +166,7 @@ export function ShatteredProductViewer({ className, scrollProgress = 0 }: Shatte
 
     const allMeshes = parts.map((p) => p.mesh);
 
-    let rotationSpeed = 0.006;
+    const rotationSpeed = 0.006;
     const autoRotate = true;
 
     const animate = () => {

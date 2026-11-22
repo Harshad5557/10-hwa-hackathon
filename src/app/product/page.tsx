@@ -278,7 +278,7 @@ export default function ProductPage() {
 
             <div>
               <h3 className="text-xl font-bold text-dark-bg mb-3 flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-amber-500" /> What's included
+                <Wrench className="w-5 h-5 text-amber-500" /> What&apos;s included
               </h3>
               <ul className="space-y-2 text-sm text-muted">
                 <li className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-amber-500" /> Feast Forge Smart Feeder Maze unit</li>

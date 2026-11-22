@@ -16,11 +16,11 @@ export default function WarrantyPage() {
             <p>Feast Forge Smart Feeder Maze is covered by a 2-year limited warranty against defects in materials and workmanship.</p>
           </div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/5">
-            <h2 className="text-xl font-bold text-white mb-4">What's covered</h2>
+            <h2 className="text-xl font-bold text-white mb-4">What&apos;s covered</h2>
             <p>Motor, electronics, and structural components under normal use conditions.</p>
           </div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/5">
-            <h2 className="text-xl font-bold text-white mb-4">What's not covered</h2>
+            <h2 className="text-xl font-bold text-white mb-4">What&apos;s not covered</h2>
             <p>Damage from misuse, accidents, unauthorized modifications, or normal wear and tear.</p>
           </div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/5">

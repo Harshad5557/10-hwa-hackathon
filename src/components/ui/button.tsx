@@ -26,7 +26,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       return (
         <span
-          ref={ref as any}
+          ref={ref as React.Ref<HTMLSpanElement>}
           className={cn(
             "inline-flex items-center justify-center gap-2 rounded-ff font-medium transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 disabled:opacity-50 disabled:pointer-events-none",
             variants[variant],

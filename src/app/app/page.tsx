@@ -303,7 +303,7 @@ export default function AppPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="ff-heading-lg mb-4">Ready to change mealtime?</h2>
           <p className="ff-body-lg text-muted mb-8 max-w-lg mx-auto">
-            Choose your tier and start enriching your dog's feeding experience today.
+            Choose your tier and start enriching your dog&apos;s feeding experience today.
           </p>
           <Button variant="primary" size="lg" asChild>
             <Link href="/product">Shop Feast Forge</Link>

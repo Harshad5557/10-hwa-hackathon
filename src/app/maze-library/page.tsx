@@ -181,7 +181,7 @@ export default function MazeLibraryPage() {
               <h3 className="text-white font-bold mb-2">Important note</h3>
               <p className="text-muted text-sm leading-relaxed">
                 64 theoretical position combinations are proposed targets, not verified, unique, or safe puzzles.
-                Validated configurations are limited to those listed in each tier's maze library.
+                Validated configurations are limited to those listed in each tier&apos;s maze library.
                 No safety, behavioral, or performance claims are made beyond intended enrichment use.
               </p>
             </div>
@@ -194,7 +194,7 @@ export default function MazeLibraryPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="ff-heading-lg mb-4">Ready to change mealtime?</h2>
           <p className="ff-body-lg text-muted mb-8 max-w-lg mx-auto">
-            Choose your tier and start enriching your dog's feeding experience today.
+            Choose your tier and start enriching your dog&apos;s feeding experience today.
           </p>
           <Button variant="primary" size="lg" asChild>
             <Link href="/product">Shop Feast Forge</Link>

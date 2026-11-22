@@ -82,7 +82,7 @@ export default function SupportPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-amber-400 text-xs font-bold tracking-wider uppercase mb-2 block">Support</span>
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">We're here to help</h1>
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">We&apos;re here to help</h1>
             <p className="text-lg text-muted max-w-2xl mx-auto">
               Answers to common questions and ways to reach our team.
             </p>
@@ -133,14 +133,14 @@ export default function SupportPage() {
         <div className="max-w-2xl mx-auto">
           <SectionHeader
             title="Contact us"
-            description="Send us a message and we'll get back to you within 1-2 business days."
+            description="Send us a message and we&apos;ll get back to you within 1-2 business days."
           />
 
           {submitted ? (
             <div className="p-8 rounded-3xl border border-amber-500/20 bg-amber-500/5 text-center">
               <CheckCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Message sent</h3>
-              <p className="text-muted text-sm">We'll get back to you within 1-2 business days.</p>
+              <p className="text-muted text-sm">We&apos;ll get back to you within 1-2 business days.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6 p-8 rounded-3xl border border-white/10 bg-white/5">

@@ -21,7 +21,7 @@ export default function ReturnsPage() {
           </div>
           <div className="p-6 rounded-2xl border border-white/10 bg-white/5">
             <h2 className="text-xl font-bold text-white mb-4">How to return</h2>
-            <p>Contact hello@feastforge.example to initiate a return. We'll provide a prepaid return label.</p>
+            <p>Contact hello@feastforge.example to initiate a return. We&apos;ll provide a prepaid return label.</p>
           </div>
         </div>
       </div>

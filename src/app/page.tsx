@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Play, CheckCircle, ChevronRight } from "lucide-react";
@@ -283,7 +284,7 @@ export default function Home() {
           <div className="bg-amber-500/5 border border-amber-500/20 rounded-3xl p-12 md:p-16 text-center">
             <h2 className="ff-heading-lg mb-4">Make every meal more interesting</h2>
             <p className="ff-body-lg text-muted mb-8 max-w-lg mx-auto">
-              Choose your tier and start enriching your dog's feeding experience today.
+              Choose your tier and start enriching your dog&apos;s feeding experience today.
             </p>
             <Button variant="primary" size="lg" asChild>
               <Link href="/product">Shop Feast Forge</Link>
