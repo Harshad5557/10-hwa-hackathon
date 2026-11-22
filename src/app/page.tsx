@@ -152,7 +152,7 @@ export default function Home() {
       <Section variant="dark">
         <SectionHeader
           title="Engineered for enrichment"
-          description="Every component serves a purpose. From portion control to device status, Feast Forge is designed around your dog's feeding experience."
+          description="Every part has a purpose from portion control to device update. Each feature helps make feeding easier and more engaging for your dog."
         />
         <div className="grid md:grid-cols-3 gap-8">
           {[
@@ -162,7 +162,7 @@ export default function Home() {
             },
             {
               title: "Feeding mechanism",
-              desc: "Enclosed motor and drive system rotates each disk to precise index positions. Quiet operation. Four positions per disk.",
+              desc: "Abitin motor turns each disc to one on a 4 position The enclose is designed for quit operation.",
             },
             {
               title: "Device status",

@@ -70,7 +70,7 @@ const components: Component[] = [
   {
     id: 7,
     name: "Gears & motor assembly",
-    description: "Enclosed motor and drive system rotating each maze disk to precise index positions.",
+    description: "Abitin motor turns each disc to one on a 4 position The enclose is designed for quit operation.",
     detail: "Quiet, enclosed motor. Rotates disks independently. Four positions per disk. 64 theoretical position combinations (proposed target).",
     position: { top: "72%", left: "40%" },
     image: "/images/exploded/exploded-view.jpg",

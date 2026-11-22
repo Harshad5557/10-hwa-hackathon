@@ -18,7 +18,7 @@ export function Footer() {
               <span className="font-bold text-xl tracking-tight text-white">Feast<span className="text-amber-500">Forge</span></span>
             </div>
             <p className="ff-body-sm mb-8">
-              Premium intelligent dog enrichment and puzzle feeding systems. Engineered like consumer technology.
+              Smart puzzle feeders that makes every meal more engaging for your dog.
             </p>
             <div className="flex gap-4">
               <a href="#" className="text-muted hover:text-white transition-colors"><Share2 className="w-5 h-5" /></a>

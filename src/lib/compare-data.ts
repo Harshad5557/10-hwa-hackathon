@@ -25,7 +25,7 @@ export const MODEL_TIERS: ModelTier[] = [
     subtitle: "Expanded",
     price: 199,
     image: "/images/product/hero.jpg",
-    description: "Expanded validated maze library. App pairing. Feeding schedules. Feeding history. Device status. Wi-Fi notifications.",
+    description: "get more maze design app controls and feeding schedules. You can also cheque feeding history device status and wifi alerts.",
     features: ["Expanded validated maze library", "App pairing", "Feeding schedules", "Feeding history", "Device status", "Wi-Fi notifications"],
     popular: true,
   },
@@ -35,7 +35,7 @@ export const MODEL_TIERS: ModelTier[] = [
     subtitle: "Full",
     price: 279,
     image: "/images/product/hero.jpg",
-    description: "Full validated configuration library. Adaptive difficulty recommendations. Advanced analytics. Expanded app controls.",
+    description: "get all mesh designs smart difficulty tips detail feeding reports and more control through the app.",
     features: ["Full validated configuration library", "Adaptive difficulty recommendations", "Advanced analytics", "Expanded app controls"],
   },
 ];
