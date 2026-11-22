@@ -30,7 +30,7 @@ CONFIG = {
     "opencode": "1.19.5"
 }  # yours: made for Harshad by the hackathon page
 
-VERSION = "1.9.8"
+VERSION = "1.9.13"
 _CTX = None
 
 
@@ -793,7 +793,7 @@ def live_config():
     for key in ("name", "first", "roll", "project", "mark", "opencode", "github"):
         if isinstance(live.get(key), str) and live[key].strip():
             CONFIG[key] = live[key].strip()
-    for key in ("phase", "starts_at", "ends_at", "closed", "restarted_at"):
+    for key in ("phase", "starts_at", "ends_at", "closed", "restarted_at", "started_over_at", "since", "again"):
         LIVE[key] = live.get(key)
     NAME = (CONFIG.get("project") or NAME).lower()
     MARK = CONFIG.get("mark") or MARK
@@ -1079,6 +1079,8 @@ def move_here(here, there, make):
 def project_folder():
     global RETURNING
     here = os.path.dirname(os.path.abspath(__file__))
+    if started_over(here):
+        return here
     if os.path.exists(os.path.join(here, ".hwa", "config.json")):
         if folder_owner(here) != "mine":
             steps, then = move_here(here, new_folder(), True)
@@ -1403,6 +1405,7 @@ def setup_vercel(folder):
     if linked != name and not yes_no(f"  Signed in to Vercel as {where}. Make your project there? (yes or no): ", True):
         stop("You chose not to use the Vercel account signed in on this computer.", [f"Another account: run `{q(vercel)} logout`, then `{q(vercel)} login` with yours.", f"Another team of yours: run `{q(vercel)} switch` and choose it.", "Then run init.py again."])
     ok(f"Vercel account: {where}")
+    start_over_vercel(vercel, folder)
     if linked != name:
         working(f"Making your Vercel project {name}...")
         r = run([vercel, "project", "add", name], cwd=folder, timeout=180)
@@ -1411,7 +1414,7 @@ def setup_vercel(folder):
             stop(f"Vercel didn't make the project {name}. {said(r, 300)}", ONLINE + [f"If you're in a Vercel team, use your own account: run `{q(vercel)} switch` and choose your own name."])
         if exists:
             say(f"  A Vercel project called {name} is already in your Vercel account (likely from an earlier run of init.py).")
-            if not yes_no("  Use it for the hackathon? Your site will be deployed to it. (yes or no): ", True):
+            if not KEEP_VERCEL and not yes_no("  Use it for the hackathon? Your site will be deployed to it. (yes or no): ", True):
                 stop(f"You chose not to use the Vercel project {name}.", [f"Open https://vercel.com/dashboard, open {name}, then Settings: rename it (or delete it, if you don't need it)."])
         working("Linking this folder to it...")
         r = run([vercel, "link", "--yes", "--project", name], cwd=folder, capture=False, timeout=300)
@@ -1429,7 +1432,8 @@ def cmd_path(path):
     return path.replace("%", "%%")
 
 
-def launchers(folder, opencode, node=None):
+def launchers(folder, opencode, node=None, links=(None, None)):
+    repo, site = (safe_link(links[0]), safe_link(links[1]))
     if WIN:
         lines = ["@echo off"]
         if ADDED:
@@ -1449,6 +1453,7 @@ def launchers(folder, opencode, node=None):
         if node:
             lines.append(f'"{cmd_path(node)}" -e "{AFTER_JS}"')
             lines.append(f'"{cmd_path(node)}" {seal} seal - >nul 2>&1')
+            lines.append(f'"{cmd_path(node)}" -e "{next_js(repo, site)}"')
         text = "\r\n".join(lines) + "\r\n"
         if not all(ord(c) < 128 for c in text):
             text = "@echo off\r\nchcp 65001 >nul\r\n" + "\r\n".join(lines[1:]) + "\r\n"
@@ -1467,9 +1472,9 @@ def launchers(folder, opencode, node=None):
             if node:
                 n, c = shlex.quote(node), ".hwa/hwa-collect.mjs"
                 o = shlex.quote(opencode)
-                f.write(f'#!/bin/sh\nexport PATH={path}"$PATH"\n{own_db}export {NO_UPDATE}=1\nunset {" ".join(OPENCODE_OVERRIDES)}\ncd "$(dirname "$0")" && export PWD="$(pwd)" && {warn} || exit 1\ntrap : INT\n{n} {c} watch - </dev/null >/dev/null 2>&1 &\nW=$!\n{n} {c} pick - --report .hwa/pick.txt\nS="$(cat .hwa/pick.txt 2>/dev/null)"\nif [ "$S" = "stop" ]; then kill $W 2>/dev/null; wait $W 2>/dev/null; exit 1; fi\n{BEFORE_SH}\nif [ -n "$S" ]; then {o} -s "$S"; else {o}; fi\nE=$?\n{AFTER_SH}\nkill $W 2>/dev/null\nwait $W 2>/dev/null\n{n} {c} seal - </dev/null >/dev/null 2>&1\nexit $E\n')
+                f.write(f'#!/bin/sh\nexport PATH={path}"$PATH"\n{own_db}export {NO_UPDATE}=1\nunset {" ".join(OPENCODE_OVERRIDES)}\ncd "$(dirname "$0")" && export PWD="$(pwd)" && {warn} || exit 1\ntrap : INT\n{n} {c} watch - </dev/null >/dev/null 2>&1 &\nW=$!\n{n} {c} pick - --report .hwa/pick.txt\nS="$(cat .hwa/pick.txt 2>/dev/null)"\nif [ "$S" = "stop" ]; then kill $W 2>/dev/null; wait $W 2>/dev/null; exit 1; fi\n{BEFORE_SH}\nif [ -n "$S" ]; then {o} -s "$S"; else {o}; fi\nE=$?\n{AFTER_SH}\nkill $W 2>/dev/null\nwait $W 2>/dev/null\n{n} {c} seal - </dev/null >/dev/null 2>&1\n{next_sh(repo, site)}\nexit $E\n')
             else:
-                f.write(f'#!/bin/sh\nexport PATH={path}"$PATH"\n{own_db}export {NO_UPDATE}=1\nunset {" ".join(OPENCODE_OVERRIDES)}\ncd "$(dirname "$0")" && export PWD="$(pwd)" && {warn} || exit 1\n{BEFORE_SH}\n{shlex.quote(opencode)}\nE=$?\n{AFTER_SH}\nexit $E\n')
+                f.write(f'#!/bin/sh\nexport PATH={path}"$PATH"\n{own_db}export {NO_UPDATE}=1\nunset {" ".join(OPENCODE_OVERRIDES)}\ncd "$(dirname "$0")" && export PWD="$(pwd)" && {warn} || exit 1\n{BEFORE_SH}\n{shlex.quote(opencode)}\nE=$?\n{AFTER_SH}\n{next_sh(repo, site)}\nexit $E\n')
         os.chmod(p, 0o755)
 
 
@@ -1530,6 +1535,261 @@ def self_update():
     sys.exit(subprocess.call([sys.executable, me, *sys.argv[1:]], env=dict(os.environ, HWA_UPDATED="1")))
 
 
+START_OVER = os.path.join(".hwa", "start-over.json")
+KEEP_VERCEL = False
+START_OVER_STOPS = {
+    "used": "You've already started over once, and it can be done only once. init.py carries on with the entry you have.",
+    "ended": "The hackathon has ended, so it can't be started over. init.py carries on with the entry you have.",
+}
+
+
+def started_over(folder):
+    left = read_json(os.path.join(folder, START_OVER))
+    return left if isinstance(left, dict) and left.get("todo") else {}
+
+
+def write_marker(folder, left):
+    os.makedirs(os.path.join(folder, ".hwa"), exist_ok=True)
+    path = os.path.join(folder, START_OVER)
+    part = path + ".new"
+    with open(part, "w", encoding="utf-8") as f:
+        json.dump(left, f)
+    os.replace(part, path)
+
+
+def start_over_done(folder, part, **more):
+    left = started_over(folder)
+    if not left:
+        return
+    left.update(more)
+    left["todo"] = [t for t in left.get("todo", []) if t != part]
+    try:
+        if left["todo"]:
+            write_marker(folder, left)
+        else:
+            os.remove(os.path.join(folder, START_OVER))
+    except OSError:
+        pass
+
+
+def is_link(path):
+    if os.path.islink(path):
+        return True
+    check = getattr(os.path, "isjunction", None)
+    if check:
+        try:
+            if check(path):
+                return True
+        except OSError:
+            pass
+    try:
+        return bool(getattr(os.lstat(path), "st_file_attributes", 0) & 0x400)
+    except OSError:
+        return False
+
+
+def remove_tree(path, failed):
+    try:
+        if is_link(path):
+            try:
+                os.unlink(path)
+            except OSError:
+                os.rmdir(path)
+            return
+        unhide(path)
+        if os.path.isdir(path):
+            try:
+                os.chmod(path, stat.S_IREAD | stat.S_IWRITE | stat.S_IXUSR)
+            except OSError:
+                pass
+            for name in os.listdir(path):
+                remove_tree(os.path.join(path, name), failed)
+            os.rmdir(path)
+        else:
+            try:
+                os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
+            except OSError:
+                pass
+            os.remove(path)
+    except OSError:
+        if os.path.lexists(path):
+            failed.append(path)
+
+
+def wipe(folder):
+    keep = {me().lower(), "init.py"}
+    failed = []
+    if MAC:
+        run(["chflags", "-R", "nohidden", folder], timeout=60)
+    for name in os.listdir(folder):
+        if name.lower() in keep:
+            continue
+        path = os.path.join(folder, name)
+        if name == ".hwa" and os.path.isdir(path) and not is_link(path):
+            unhide(path)
+            for inner in os.listdir(path):
+                if inner != os.path.basename(START_OVER):
+                    remove_tree(os.path.join(path, inner), failed)
+            continue
+        remove_tree(path, failed)
+    return failed
+
+
+def resume_or_start_over(folder):
+    chance = (LIVE.get("again") or {}).get("start_over")
+    if not interactive() or not chance:
+        return
+    if chance in START_OVER_STOPS:
+        say("")
+        note("skip", START_OVER_STOPS[chance])
+        return
+    say("")
+    say("  **This folder is already your hackathon project.** What would you like to do?")
+    numbered(["**Resume**: carry on where you left off. OpenCode opens your last session.", "**Start over**: delete everything and build your entry again from the beginning."])
+    line("    " + paint("Start over can be done only once.", 1, 31))
+    while True:
+        a = re.sub(r"[^a-z0-9]", "", ask("\n  Type 1 to resume or 2 to start over (1 or 2): ").lower())
+        if a in ("1", "resume", "r"):
+            ok("Resuming.")
+            return
+        if a in ("2", "startover", "start", "s"):
+            break
+        if ENDED:
+            say("  Nothing can be typed here: taken as resume.")
+            return
+        say("  Please type 1 or 2.")
+    config = read_json(os.path.join(folder, ".hwa", "config.json"))
+    repo = config.get("repo") or ""
+    vproject = config.get("vercel") or NAME
+    say("")
+    line("  " + paint("Starting over deletes these for good:", 1, 31))
+    numbered([f"Your GitHub repo{(': ' + repo) if repo else ''}.", f"Your Vercel project {vproject} and its site (https://{vproject}.vercel.app).", f"Every file in this folder except init.py: {folder}", "Your OpenCode sessions in this folder."])
+    say("  Your earlier entry stops counting, so submit your new one before the deadline. init.py then sets you up again from the beginning.")
+    line("  " + paint("You can start over only once, and it can't be undone.", 1, 31))
+    typed = ask('\n  Type "START OVER" to confirm (anything else keeps everything): ')
+    if re.sub(r"\s+", " ", typed.strip().strip('"').strip("'").strip().lower()) != "start over":
+        say("")
+        ok("Nothing was deleted. Resuming.")
+        return
+    try:
+        write_marker(folder, {"at": None, "repo": repo, "vercel": vproject, "opencode_db": config.get("opencode_db") or None, "todo": ["restart", "files", "sessions", "repo", "vercel"]})
+    except OSError as e:
+        stop(f"init.py couldn't write in this folder, so nothing was started over ({e}).", ["Check you can make files in this folder, then run init.py again."], again=False)
+
+
+def continue_start_over(folder):
+    global RETURNING
+    left = started_over(folder)
+    if not left:
+        return
+    if "restart" in left.get("todo", []):
+        r = api("restart")
+        error = r.get("error") or ""
+        if error and re.search(r"token|reach", error, re.I):
+            site_problem("Starting over", error)
+        if error and not re.search(r"already started over", error, re.I):
+            try:
+                os.remove(os.path.join(folder, START_OVER))
+            except OSError:
+                pass
+            say("")
+            note("skip", f"{error} Nothing was deleted. Resuming.")
+            RETURNING = bool(read_json(os.path.join(folder, ".hwa", "config.json")).get("repo"))
+            return
+        start_over_done(folder, "restart", at=r.get("at") or left.get("at"))
+        LIVE["since"] = r.get("at") or LIVE.get("since")
+    if "files" in started_over(folder).get("todo", []):
+        working("Deleting this folder's files (init.py stays)...")
+        failed = wipe(folder)
+        if failed:
+            stop(f"Some files in this folder couldn't be deleted: {', '.join(os.path.basename(x) for x in failed[:5])}", ["Close every OpenCode, editor and terminal window that has this folder open.", "Then run init.py again: it carries on starting over."])
+        start_over_done(folder, "files")
+        ok("Deleted this folder's files.")
+    RETURNING = False
+
+
+def start_over_sessions(folder, opencode):
+    if "sessions" not in started_over(folder).get("todo", []):
+        return
+    ids = [sid for sid, _ in folder_sessions(folder)]
+    for x in listed_sessions(opencode, folder):
+        sid = str(x.get("id") or "")
+        if same_folder(x.get("directory"), folder) and re.match(r"^ses_[A-Za-z0-9]+$", sid) and sid not in ids:
+            ids.append(sid)
+    gone = sum(1 for sid in ids if run([opencode, "session", "delete", sid], cwd=folder, timeout=120).returncode == 0)
+    if not ids:
+        ok("There were no OpenCode sessions in this folder to delete.")
+    elif gone < len(ids):
+        note("warn", f"Deleted {gone} of the {len(ids)} OpenCode sessions in this folder. The rest stay, and aren't sent with your new entry.")
+    else:
+        ok(f"Deleted your {gone} OpenCode session{'s' if gone != 1 else ''} in this folder.")
+    start_over_done(folder, "sessions")
+
+
+def start_over_repo(gh, folder, login):
+    if "repo" not in started_over(folder).get("todo", []):
+        return
+    full = f"{login}/{NAME}"
+    seen = repo_on_github(gh, full)
+    if seen is not None and not (REPO_TAG in (seen.get("description") or "") or (seen.get("description") or "").strip() == REPO_NOTE):
+        note("warn", f"github.com/{full} wasn't made by init.py for this entry, so it's left alone.")
+        seen = None
+    if seen is not None:
+        working(f"Deleting your repo github.com/{full}...")
+        r = run([gh, "repo", "delete", full, "--yes"], timeout=180)
+        if r.returncode != 0 and "delete_repo" in said(r):
+            note("web", "**GitHub needs your OK to delete the repo. In your browser:**")
+            numbered(["Copy the one-time code it shows below, then press **Enter**: your browser opens GitHub.", f"Sign in as **{login}** if it asks, paste the code, and press **Authorize**."])
+            say("")
+            run([gh, "auth", "refresh", "--hostname", "github.com", "--scopes", "delete_repo"], capture=False, timeout=900)
+            r = run([gh, "repo", "delete", full, "--yes"], timeout=180)
+        if r.returncode != 0 and repo_on_github(gh, full) is not None:
+            stop(f"GitHub didn't delete your repo github.com/{full}. {said(r, 300)}", [f"Delete it yourself: open https://github.com/{full}/settings, scroll to the bottom, press **Delete this repository** and confirm.", "Then run init.py again: it carries on starting over."])
+        ok(f"Deleted your repo github.com/{full}.")
+        say("     GitHub's permission to delete repos stays on this computer's sign-in. To take it back any time: `gh auth refresh -h github.com --remove-scopes delete_repo`", 2)
+    start_over_done(folder, "repo")
+
+
+def vercel_project_there(found, name, folder):
+    try:
+        r = subprocess.run([found, "project", "inspect", name], cwd=folder, env=ENV, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    text = (r.stdout or "") + (r.stderr or "")
+    if re.search(r"project_not_found|no project for|no such project|project not found|doesn.t exist", text, re.I):
+        return False
+    if r.returncode == 0 and re.search(r"Found Project", text, re.I):
+        return True
+    return None
+
+
+def start_over_vercel(vercel, folder):
+    global KEEP_VERCEL
+    left = started_over(folder)
+    if "vercel" not in left.get("todo", []):
+        return
+    name = NAME
+    working(f"Deleting your Vercel project {name}...")
+    found = vercel if os.path.dirname(vercel) else (shutil.which(vercel, path=ENV.get("PATH")) or vercel)
+    text = ""
+    for _ in range(2):
+        try:
+            r = subprocess.run([found, "project", "rm", name], cwd=folder, env=ENV, input="y\n", capture_output=True, text=True, timeout=180, encoding="utf-8", errors="replace")
+            text, code_ = (r.stdout or "") + (r.stderr or ""), r.returncode
+        except (OSError, subprocess.TimeoutExpired) as e:
+            text, code_ = str(e), 1
+        there = vercel_project_there(found, name, folder)
+        missing = code_ != 0 and re.search(r"no such project|not found|doesn.t exist", text, re.I)
+        if there is False or (there is None and (code_ == 0 or missing)):
+            ok(f"There's no Vercel project {name} left to delete." if missing else f"Deleted your Vercel project {name}.")
+            say(f"     Your old site is gone, so https://{name}.vercel.app shows \"not found\" until submit.py puts your new one live.", 2)
+            start_over_done(folder, "vercel")
+            return
+    KEEP_VERCEL = True
+    note("warn", f"Vercel kept your project {name}, so it's used again for your new entry. Your new site replaces the old one when you run submit.py.")
+    start_over_done(folder, "vercel")
+
+
 def main():
     self_update()
     window_ready()
@@ -1542,6 +1802,9 @@ def main():
 
     step(1, "Your project folder")
     folder = project_folder()
+    if RETURNING:
+        resume_or_start_over(folder)
+    continue_start_over(folder)
     tidy_copies(folder)
     ok(f"Your project folder: **{folder}**")
     say("     Your site, OpenCode and submit.py all work in this folder.", 2)
@@ -1556,10 +1819,12 @@ def main():
     step(4, f"OpenCode {CONFIG.get('opencode') or ''}".strip())
     own_opencode_db(folder)
     opencode = ensure_opencode()
+    start_over_sessions(folder, opencode)
     step(5, "GitHub and your repo")
     gh = ensure_gh(links)
     login, uid = github_login(gh)
     ok(f"GitHub account: **{login}**")
+    start_over_repo(gh, folder, login)
     setup_git(folder, login, uid)
     write_files(folder, login, uid)
     repo = setup_repo(gh, folder, login)
@@ -1577,7 +1842,7 @@ def main():
         os.remove(collector)
         stop("The collector downloaded isn't the hackathon site's own copy (its checksum differs), so it wasn't kept.", ONLINE)
     fetch(f"{SERVER}/hackathon/submit.py", os.path.join(folder, "submit.py"), what="submit.py")
-    launchers(folder, opencode, node)
+    launchers(folder, opencode, node, links=(repo, f"https://{vproject}.vercel.app" if vproject else None))
     tools = {"node": out([node, "--version"]), "opencode": out([opencode, "--version"]), "gh": (out([gh, "--version"]) or "").split("\n")[0], "os": KEY}
     for attempt in range(2):
         r = api("setup", github_login=login, repo_url=repo, vercel_project=vproject, folder=folder_print(folder), tools=tools)
@@ -1632,7 +1897,7 @@ def main():
         return
     if fix_opencode_data() == "opencode2":
         return
-    session = last_session(node, collector, folder, env) if RETURNING else None
+    session = (last_session(node, collector, folder, env) or next((sid for sid, _ in folder_sessions(folder)), None)) if RETURNING else None
     note("go", "Opening your last OpenCode session..." if session else "Starting OpenCode...")
     clear_for_full_screen()
     code_ = opencode_session(opencode, folder, env, first_prompt, node, collector, session)
@@ -1667,6 +1932,37 @@ def opencode_tables():
     return db, names
 
 
+def folder_sessions(folder):
+    db = ENV.get("OPENCODE_DB") or os.path.join(opencode_data(), "opencode.db")
+    if not os.path.isfile(db):
+        return []
+    try:
+        import sqlite3
+        import pathlib
+        con = sqlite3.connect(pathlib.Path(db).resolve().as_uri() + "?mode=ro", uri=True, timeout=5)
+        try:
+            rows = con.execute("select id, directory, time_updated from session").fetchall()
+        finally:
+            con.close()
+    except Exception:
+        return []
+    mine = [(str(r[0]), r[2] or 0) for r in rows if r[0] and re.match(r"^ses_[A-Za-z0-9]+$", str(r[0])) and same_folder(r[1], folder)]
+    return sorted(mine, key=lambda x: x[1] if isinstance(x[1], (int, float)) else 0, reverse=True)
+
+
+def listed_sessions(opencode, folder):
+    r = run([opencode, "session", "list", "--format", "json"], cwd=folder, timeout=120)
+    text = (r.stdout or "") if r.returncode == 0 else ""
+    m = re.search(r"(?m)^\[", text)
+    if not m:
+        return []
+    try:
+        listed, _ = json.JSONDecoder().raw_decode(text, m.start())
+    except ValueError:
+        return []
+    return [x for x in listed if isinstance(x, dict)] if isinstance(listed, list) else []
+
+
 def other_opencode_db():
     t = opencode_tables()
     return t[0] if t and t[1] and "session" not in t[1] and "session_v2" not in t[1] else None
@@ -1693,7 +1989,7 @@ def move_command():
 
 
 def own_opencode_db(folder):
-    kept = read_json(os.path.join(folder, ".hwa", "config.json")).get("opencode_db")
+    kept = read_json(os.path.join(folder, ".hwa", "config.json")).get("opencode_db") or started_over(folder).get("opencode_db")
     if kept or opencode2_db():
         ENV["OPENCODE_DB"] = kept or os.path.join(opencode_data(), "opencode-hwa.db")
         CONFIG["opencode_db"] = ENV["OPENCODE_DB"]
@@ -1947,6 +2243,56 @@ def quiet_stop(p):
         pass
 
 
+def your_links(folder):
+    cfg = read_json(os.path.join(folder, ".hwa", "config.json"))
+    repo = cfg.get("repo") if isinstance(cfg.get("repo"), str) and cfg.get("repo") else None
+    v = cfg.get("vercel") if isinstance(cfg.get("vercel"), str) and cfg.get("vercel") else None
+    return repo, (f"https://{v}.vercel.app" if v else None)
+
+
+def link_rows(repo, site):
+    if not (repo or site):
+        return []
+    rows = ["", "  **Your entry's links.** Use exactly these, on your hackathon page too:"]
+    if repo:
+        rows.append("     GitHub repo:  " + paint(repo, 1, 36))
+    if site:
+        rows.append("     Live site:    " + paint(site, 1, 36))
+    return rows
+
+
+def next_sh(repo, site):
+    parts = ["printf '\\n\\033[1m OpenCode has closed. Next, send your entry:\\033[0m\\n'", f"printf '  In this terminal, run: \\033[1;7m %s \\033[0m\\n' {shlex_quote(PY + ' submit.py')}"]
+    if repo:
+        parts.append(f"printf '  Your GitHub repo:  \\033[1;36m%s\\033[0m\\n' {shlex_quote(repo)}")
+    if site:
+        parts.append(f"printf '  Your live site:    \\033[1;36m%s\\033[0m\\n' {shlex_quote(site)}")
+    if repo or site:
+        parts.append("printf '  Use exactly these, on your hackathon page too.\\n'")
+    return "if [ -t 1 ]; then " + "; ".join(parts) + "; fi"
+
+
+def next_js(repo, site):
+    text = "\\n\\x1b[1m OpenCode has closed. Next, send your entry:\\x1b[0m\\n  In this terminal, run: \\x1b[1;7m " + PY + " submit.py \\x1b[0m\\n"
+    if repo:
+        text += "  Your GitHub repo:  \\x1b[1;36m" + repo + "\\x1b[0m\\n"
+    if site:
+        text += "  Your live site:    \\x1b[1;36m" + site + "\\x1b[0m\\n"
+    if repo or site:
+        text += "  Use exactly these, on your hackathon page too.\\n"
+    return "if(process.stdout.isTTY)process.stdout.write('" + text + "')"
+
+
+def safe_link(x):
+    return x if isinstance(x, str) and re.fullmatch(r"https://[A-Za-z0-9._~/:-]{1,300}", x) else None
+
+
+def shlex_quote(x):
+    import shlex
+
+    return shlex.quote(x)
+
+
 def next_steps(folder, opened):
     here = in_folder(folder)
     start = start_command(folder, here)
@@ -1957,12 +2303,13 @@ def next_steps(folder, opened):
         open_models_warning()
         steps.append(f"Start OpenCode: {start}\nUse only open-source models in it. Build your site with it, then leave it: type **/exit** and press **Enter**.")
     steps.append(f"{'In' if here else 'Then, in'} this same terminal, run: `{PY} submit.py`\nIt saves your work's bundle first, then commits, pushes, deploys and sends your entry, and tells you if anything's missing.")
-    steps.append("Check what it shows, and type **yes** when it asks. Your hackathon page then says **Submitted**.")
+    steps.append("Check your live site when it asks, and type **approve**. Your hackathon page then says **Submitted**.")
     head = f"{mark('party')} **OpenCode has closed. Next, send your entry:**" if opened else f"{mark('do')} **Next:**"
     rows = [head]
     for i, s in enumerate(steps, 1):
         first, *rest = s.split("\n")
         rows += ["", f"  **{i}.** {first}"] + [f"     {more}" for more in rest]
+    rows += link_rows(*your_links(folder))
     if opened:
         rows += ["", f"Not finished yet? Start OpenCode again: {start}"]
     block(rows)

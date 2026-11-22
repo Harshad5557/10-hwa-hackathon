@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlsplit
 
-VERSION = "1.9.5"
+VERSION = "1.9.6"
 _CTX = None
 
 
@@ -973,6 +973,36 @@ def website_check():
             stop("OpenCode couldn't be opened from here.", [f"Open it yourself: run `{'hwa-start.cmd' if WIN else './hwa-start.sh'}` in this folder.", "Make your changes, type /exit, then run submit.py again."], again=False)
 
 
+AGAIN_STOPS = {
+    "used": "You've already submitted again once, and it can be done only once. Your latest version is the one we review.",
+    "ended": "The hackathon has ended, so your entry can't be submitted again. The version you sent is the one we review.",
+}
+
+
+def submit_again_first():
+    global BUNDLE
+    st = api("status")
+    if st.get("error") or not st.get("submitted_at"):
+        return
+    again = (st.get("again") or {}).get("submit_again")
+    say("")
+    ok(f"Your entry is already submitted ({india_time(st['submitted_at'])} IST).")
+    if again != "yes":
+        BUNDLE = None
+        stop(AGAIN_STOPS.get(again, "Your entry is already submitted. Nothing more can change."), again=False)
+    say("")
+    line("   " + paint("You can submit again only once.", 1, 31))
+    numbered(["Make your changes in OpenCode first (they're saved with your sessions).", "Type **yes** here: your latest work is sent as a new version.", "It replaces the version you sent. Until it arrives, the one you sent is the one we review."], 5)
+    if not yes_no("\n   Do you want to submit again? (yes or no): ", False):
+        say("")
+        ok("Nothing changed: the version you sent is the one we review. You can still submit again later, once.")
+        sys.exit(0)
+    r = api("again")
+    if r.get("error"):
+        site_said("Your entry couldn't be opened to submit again", r["error"])
+    ok("Your entry is open again. Sending your new version now.")
+
+
 def main():
     global BUNDLE
     say("")
@@ -996,6 +1026,7 @@ def main():
         stop("No bundle was made (the reason is just above).", ["Run submit.py in your project folder: the folder init.py is in, where you started OpenCode.", "If it says no sessions were found, start OpenCode once in this folder, then try again."])
     BUNDLE = made["file"]
     ok(f"{'Kept' if resumed else 'Saved'}: {BUNDLE}")
+    submit_again_first()
     refresh_init()
     approved = website_check()
 
@@ -1044,7 +1075,9 @@ def main():
     ok("Your bundle has arrived.")
 
     step(5, "Submit")
-    say("   **After you submit, nothing more can change:** not the repo, the site or the bundle.")
+    chance = status.get("again") or {}
+    later = " (you can still submit again once later)" if chance and not chance.get("resubmitted_at") else ""
+    say(f"   **After you submit, your entry is locked**{later}.")
     if not approved and not yes_no("   Submit your entry now? (yes or no): ", False):
         say("")
         note("warn", "Not submitted. Run submit.py again when you're ready, or press **Submit my entry** on the hackathon page.")
