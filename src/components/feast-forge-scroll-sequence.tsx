@@ -29,7 +29,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [activeChapter, setActiveChapter] = useState(CHAPTERS[0]);
   const [progress, setProgress] = useState(0);
-  const [introOpacity, setIntroOpacity] = useState(1);
+  const [introOpacity, setIntroOpacity] = useState(0);
   const [outroOpacity, setOutroOpacity] = useState(0);
 
   useEffect(() => {
@@ -146,8 +146,8 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
 
       setProgress(p);
 
-      // Intro fade: first 5% of scroll
-      setIntroOpacity(p < 0.05 ? 1 - p / 0.05 : 0);
+      // Start visible - no intro fade, first frame shows immediately
+      setIntroOpacity(0);
       // Outro fade: last 5% of scroll
       setOutroOpacity(p > 0.95 ? (p - 0.95) / 0.05 : 0);
 
@@ -206,7 +206,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
   return (
     <div ref={containerRef} className={`relative ${className ?? ""}`} style={{ height: "500vh" }}>
       {/* Sticky canvas container */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-dark-bg">
+      <div className="sticky top-0 h-screen w-full overflow-hidden bg-dark-bg" style={{ backgroundImage: "url(/frames/frame_001.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
         {/* Subtle radial gradient background that shifts with progress */}
         <div
           className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
@@ -218,7 +218,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full"
-          style={{ display: "block" }}
+          style={{ display: "block", backgroundColor: "transparent" }}
         />
 
         {/* Intro fade overlay - fades out as animation begins */}

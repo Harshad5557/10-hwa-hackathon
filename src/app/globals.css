@@ -43,6 +43,7 @@
 
 html {
   scroll-behavior: smooth;
+  background-color: var(--ff-dark-bg);
 }
 
 body {
@@ -51,6 +52,8 @@ body {
   font-family: var(--ff-font-sans);
   font-feature-settings: "cv01", "cv02", "cv11";
   overflow-x: clip;
+  margin: 0;
+  padding: 0;
 }
 
 /* Typography scale - 9 sizes */
