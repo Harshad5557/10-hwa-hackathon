@@ -27,6 +27,8 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
   const [loadedCount, setLoadedCount] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [activeChapter, setActiveChapter] = useState(CHAPTERS[0]);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -35,68 +37,88 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Preload images progressively
+  // Preload images with proper decoding
   useEffect(() => {
-    const images: HTMLImageElement[] = [];
+    const images: HTMLImageElement[] = new Array(FRAME_COUNT);
     let loaded = 0;
 
-    // Load first frame immediately for instant display
-    const firstImg = new Image();
-    firstImg.src = FRAME_PATH(0);
-    firstImg.onload = () => {
-      images[0] = firstImg;
-      loaded++;
-      setLoadedCount(loaded);
-      // Draw will happen in the resize/scroll effect
-    };
-    images[0] = firstImg;
-
-    // Load remaining frames in batches
-    const loadBatch = (start: number, batchSize: number) => {
-      for (let i = start; i < Math.min(start + batchSize, FRAME_COUNT); i++) {
-        if (images[i]) continue;
+    const loadImage = (index: number): Promise<void> => {
+      return new Promise((resolve) => {
         const img = new Image();
-        img.src = FRAME_PATH(i);
-        img.onload = () => {
-          images[i] = img;
+        img.src = FRAME_PATH(index);
+        img.onload = async () => {
+          try {
+            await img.decode();
+          } catch {
+            // decode not supported or failed, continue
+          }
+          images[index] = img;
           loaded++;
           setLoadedCount(loaded);
+          if (loaded === 1) {
+            // Draw first frame as soon as it's available
+            drawFrameRef.current?.(0);
+          }
           if (loaded === FRAME_COUNT) {
             setIsReady(true);
           }
+          resolve();
         };
-        images[i] = img;
+        img.onerror = () => {
+          loaded++;
+          setLoadedCount(loaded);
+          resolve();
+        };
+        images[index] = img;
+      });
+    };
+
+    // Load first frame immediately, then rest in batches with concurrency limit
+    const loadAll = async () => {
+      // First frame first
+      await loadImage(0);
+
+      // Load rest in batches of 20 with small delays
+      const batchSize = 20;
+      for (let i = 1; i < FRAME_COUNT; i += batchSize) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + batchSize, FRAME_COUNT); j++) {
+          batch.push(loadImage(j));
+        }
+        await Promise.all(batch);
+        // Small delay between batches to avoid blocking
+        await new Promise((r) => setTimeout(r, 50));
       }
     };
 
-    // Load first 10 immediately, then rest in batches
-    loadBatch(1, 9);
-    setTimeout(() => loadBatch(10, 30), 100);
-    setTimeout(() => loadBatch(40, 60), 300);
-    setTimeout(() => loadBatch(100, 80), 600);
-    setTimeout(() => loadBatch(180, 58), 900);
-
+    loadAll();
     imagesRef.current = images;
   }, []);
+
+  const drawFrameRef = useRef<((frameIndex: number) => void) | null>(null);
 
   const drawFrame = useCallback((frameIndex: number) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     const img = imagesRef.current[frameIndex];
-    if (!canvas || !ctx || !img || !img.complete) return;
+    if (!canvas || !ctx || !img || !img.complete || img.naturalWidth === 0) return;
 
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = canvas.getBoundingClientRect();
-    const width = rect.width * dpr;
-    const height = rect.height * dpr;
+    const width = Math.round(rect.width * dpr);
+    const height = Math.round(rect.height * dpr);
 
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
       canvas.height = height;
     }
 
-    // Cover fit
-    const imgAspect = img.width / img.height;
+    // High quality smoothing
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    // Cover fit with center crop - keeps product large and sharp
+    const imgAspect = img.naturalWidth / img.naturalHeight;
     const canvasAspect = width / height;
     let drawW: number, drawH: number, drawX: number, drawY: number;
 
@@ -116,6 +138,10 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     ctx.drawImage(img, drawX, drawY, drawW, drawH);
   }, []);
 
+  useEffect(() => {
+    drawFrameRef.current = drawFrame;
+  }, [drawFrame]);
+
   // Scroll-driven frame selection
   useEffect(() => {
     if (reducedMotion) return;
@@ -125,11 +151,13 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
       const rect = containerRef.current.getBoundingClientRect();
       const scrollHeight = containerRef.current.scrollHeight - window.innerHeight;
       const scrolled = -rect.top;
-      const progress = Math.max(0, Math.min(1, scrolled / scrollHeight));
+      const p = Math.max(0, Math.min(1, scrolled / scrollHeight));
+
+      setProgress(p);
 
       const frameIndex = Math.min(
         FRAME_COUNT - 1,
-        Math.floor(progress * (FRAME_COUNT - 1))
+        Math.floor(p * (FRAME_COUNT - 1))
       );
 
       if (frameIndex !== currentFrameRef.current) {
@@ -137,6 +165,15 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(() => drawFrame(frameIndex));
       }
+
+      let chapter = CHAPTERS[0];
+      for (let i = CHAPTERS.length - 1; i >= 0; i--) {
+        if (p >= CHAPTERS[i].at) {
+          chapter = CHAPTERS[i];
+          break;
+        }
+      }
+      setActiveChapter(chapter);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -152,7 +189,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       drawFrame(0);
-    }, 100);
+    }, 50);
     return () => clearTimeout(timer);
   }, [drawFrame]);
 
@@ -170,35 +207,8 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, [drawFrame]);
 
-  // Determine active chapter text
-  const [activeChapter, setActiveChapter] = useState(CHAPTERS[0]);
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    if (reducedMotion) return;
-    const handleScroll = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const scrollHeight = containerRef.current.scrollHeight - window.innerHeight;
-      const scrolled = -rect.top;
-      const p = Math.max(0, Math.min(1, scrolled / scrollHeight));
-      setProgress(p);
-
-      let chapter = CHAPTERS[0];
-      for (let i = CHAPTERS.length - 1; i >= 0; i--) {
-        if (p >= CHAPTERS[i].at) {
-          chapter = CHAPTERS[i];
-          break;
-        }
-      }
-      setActiveChapter(chapter);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [reducedMotion]);
-
   return (
-    <div ref={containerRef} className={`relative ${className ?? ""}`} style={{ height: "400vh" }}>
+    <div ref={containerRef} className={`relative ${className ?? ""}`} style={{ height: "500vh" }}>
       {/* Sticky canvas container */}
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-dark-bg">
         <canvas
@@ -215,11 +225,14 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
               <p className="text-muted text-sm">
                 Loading sequence... {Math.round((loadedCount / FRAME_COUNT) * 100)}%
               </p>
+              <p className="text-muted/50 text-xs mt-2">
+                {loadedCount} / {FRAME_COUNT} frames
+              </p>
             </div>
           </div>
         )}
 
-        {/* Chapter text overlay - positioned to avoid covering product */}
+        {/* Chapter text overlay */}
         <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-16 md:pb-24">
           <div className="max-w-2xl mx-auto px-6 text-center">
             <p
