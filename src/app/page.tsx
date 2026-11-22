@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ShatteredProductViewer } from "@/components/shattered-product-viewer";
+import Image from "next/image";
 import { ArrowRight, Play, CheckCircle, ChevronRight } from "lucide-react";
-import { BRAND, NAV_LINKS } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { Kicker } from "@/components/ui/elements";
@@ -49,7 +49,14 @@ export default function Home() {
             </div>
 
             <div className="relative hidden lg:block">
-              <ShatteredProductViewer className="w-full max-w-md mx-auto" />
+              <Image
+                src="/images/product/hero.jpg"
+                alt="Feast Forge Smart Feeder Maze"
+                width={600}
+                height={600}
+                className="w-full h-auto max-w-md mx-auto rounded-3xl"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -63,7 +70,14 @@ export default function Home() {
       {/* Mobile hero visual */}
       <section className="relative py-12 lg:hidden overflow-hidden">
         <div className="max-w-xl mx-auto px-4">
-          <ShatteredProductViewer className="w-full max-w-md mx-auto" />
+          <Image
+            src="/images/product/hero.jpg"
+            alt="Feast Forge Smart Feeder Maze"
+            width={600}
+            height={600}
+            className="w-full h-auto max-w-md mx-auto rounded-3xl"
+            priority
+          />
         </div>
       </section>
 
@@ -82,14 +96,60 @@ export default function Home() {
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
                 part.color === "amber"
                   ? "bg-amber-500 text-charcoal"
-                  : "bg-charcoal/10 text-white border border-charcoal/20"
+                  : "bg-charcoal/10 text-charcoal border border-charcoal/20"
               }`}>
-                <span className="text-[10px]">{part.id}</span>
+                <span className="text-[10px] font-bold">{part.id}</span>
               </div>
               <h4 className="font-bold text-dark-bg mb-1">{part.name}</h4>
               <p className="text-xs text-muted leading-snug">{part.name} precision-engineered for durability.</p>
             </div>
           ))}
+        </div>
+      </Section>
+
+      {/* Exploded view - Technology section */}
+      <Section variant="dark">
+        <SectionHeader
+          title="Assembled to scattered. Scroll to explore."
+          description="From fully assembled to component-exploded, every geometric relationship is preserved."
+        />
+        <div className="max-w-4xl mx-auto">
+          <Image
+            src="/images/exploded/exploded-view.jpg"
+            alt="Feast Forge Smart Feeder Maze - Exploded view"
+            width={1200}
+            height={800}
+            className="w-full h-auto rounded-3xl"
+          />
+        </div>
+      </Section>
+
+      {/* Lifestyle - Warm light section */}
+      <Section variant="cream">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="ff-heading-lg mb-6 text-dark-bg">Better mealtimes for every dog</h2>
+            <p className="ff-body-lg text-charcoal mb-6">
+              Most dogs eat too fast. Bored at mealtime, they miss out on mental stimulation.
+              Feast Forge turns feeding into enrichment with a new puzzle at every meal.
+            </p>
+            <p className="ff-body text-muted mb-8">
+              Three rotating disks, a transparent hopper, and an amber status ring combine
+              to create an engaging feeding experience your dog will love.
+            </p>
+            <Button variant="primary" asChild>
+              <Link href="/our-story">Our Story <ChevronRight className="w-5 h-5" /></Link>
+            </Button>
+          </div>
+          <div>
+            <Image
+              src="/images/lifestyle/dog-lifestyle.jpg"
+              alt="Dog interacting with Feast Forge Smart Feeder Maze"
+              width={800}
+              height={600}
+              className="w-full h-auto rounded-3xl"
+            />
+          </div>
         </div>
       </Section>
 
@@ -142,6 +202,52 @@ export default function Home() {
         </div>
       </Section>
 
+      {/* App presentation - Dark section */}
+      <Section variant="secondary">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="ff-heading-lg mb-6">Feeding, reimagined</h2>
+            <p className="ff-body-lg text-muted mb-6">
+              Pair your Smart or Pro feeder with the Feast Forge app for schedules,
+              history, and notifications.
+            </p>
+            <p className="ff-body text-muted mb-8">
+              Feeding schedules, feeding history, device status, and Wi-Fi notifications
+              — all from your phone.
+            </p>
+            <Button variant="primary" asChild>
+              <Link href="/app">Explore the app <ChevronRight className="w-5 h-5" /></Link>
+            </Button>
+          </div>
+          <div>
+            <Image
+              src="/images/app/app-presentation.jpg"
+              alt="Feast Forge companion app"
+              width={800}
+              height={600}
+              className="w-full h-auto rounded-3xl"
+            />
+          </div>
+        </div>
+      </Section>
+
+      {/* Product family - Cream section */}
+      <Section variant="cream">
+        <SectionHeader
+          title="The Feast Forge family"
+          description="Lite, Smart, and Pro. Same core geometry. Different levels of enrichment."
+        />
+        <div className="max-w-5xl mx-auto">
+          <Image
+            src="/images/variants/product-family.jpg"
+            alt="Feast Forge product family - Lite, Smart, Pro"
+            width={1200}
+            height={600}
+            className="w-full h-auto rounded-3xl"
+          />
+        </div>
+      </Section>
+
       {/* CTA - Dark cinematic with amber glow */}
       <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(245,158,11,0.15),transparent_70%)] pointer-events-none" />
@@ -160,4 +266,3 @@ export default function Home() {
     </div>
   );
 }
-
