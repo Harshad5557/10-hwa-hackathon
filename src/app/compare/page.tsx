@@ -33,13 +33,13 @@ export default function ComparePage() {
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {MODEL_TIERS.map((tier) => (
             <div key={tier.id} className="text-center">
-              <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-charcoal mb-6">
+              <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-charcoal mb-6" style={{ height: "400px" }}>
                 <Image
                   src={tier.image}
                   alt={tier.name}
                   width={400}
                   height={400}
-                  className="w-full h-auto"
+                  className="w-full h-full object-cover"
                 />
                 {tier.popular && (
                   <div className="absolute top-4 right-4">

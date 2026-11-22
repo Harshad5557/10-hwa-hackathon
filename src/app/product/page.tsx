@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { Section, SectionHeader, Button } from "@/components/ui";
 
 export default function ProductPage() {
-  const [selectedImage, setSelectedImage] = useState(0);
   const [selectedTier, setSelectedTier] = useState("smart");
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
@@ -43,59 +42,16 @@ export default function ProductPage() {
       <section className="relative py-24 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12">
-            {/* Gallery */}
-            <div className="space-y-4">
-              {/* Main image */}
-              <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-charcoal">
-                <Image
-                  src={galleryImages[selectedImage].src}
-                  alt={galleryImages[selectedImage].alt}
-                  width={800}
-                  height={800}
-                  className="w-full h-auto"
-                  priority
-                />
-                {/* Navigation arrows */}
-                <button
-                  onClick={() => setSelectedImage((prev) => (prev === 0 ? galleryImages.length - 1 : prev - 1))}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-dark-bg/60 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-dark-bg/80 transition-colors"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setSelectedImage((prev) => (prev === galleryImages.length - 1 ? 0 : prev + 1))}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-dark-bg/60 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-dark-bg/80 transition-colors"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Thumbnails */}
-              <div className="flex gap-3 overflow-x-auto pb-2">
-                {galleryImages.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedImage(i)}
-                    className={cn(
-                      "shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all",
-                      selectedImage === i
-                        ? "border-amber-500 ring-2 ring-amber-500/20"
-                        : "border-white/10 hover:border-white/20"
-                    )}
-                    aria-label={`View ${img.label}`}
-                  >
-                    <Image
-                      src={img.src}
-                      alt={img.alt}
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
+            {/* Product image - changes with selected model */}
+            <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-charcoal">
+              <Image
+                src={tier.image || "/images/product/hero.jpg"}
+                alt={tier.name}
+                width={800}
+                height={800}
+                className="w-full h-auto"
+                priority
+              />
             </div>
 
             {/* Product info - sticky on desktop */}
