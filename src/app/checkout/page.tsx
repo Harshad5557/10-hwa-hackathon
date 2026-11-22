@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, CreditCard, AlertTriangle, CheckCircle } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/lib/toast-context";
 import { cn } from "@/lib/utils";
 
 const steps = ["Shipping", "Payment", "Review"];
@@ -16,7 +18,23 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
   const { items, subtotal, itemCount, clearCart } = useCart();
+  const { isLoggedIn } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
+
+  if (!isLoggedIn) {
+    return (
+      <div className="relative py-24 lg:py-32">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-3xl font-bold text-white mb-6">Sign in required</h1>
+          <p className="text-muted text-lg mb-10">Please sign in to your account to complete your purchase.</p>
+          <Link href="/account" className="inline-flex items-center gap-2 px-10 py-4 bg-amber-500 text-charcoal font-bold rounded-full text-lg hover:bg-white transition-all duration-300">
+            Sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
