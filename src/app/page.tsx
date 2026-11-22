@@ -113,9 +113,11 @@ export default function Home() {
       </Section>
 
       {/* Exploded view animation - Dark cinematic */}
-      <section className="relative bg-dark-bg">
+      <div className="relative">
+        <div className="h-24 bg-gradient-to-b from-cream to-dark-bg" />
         <FeastForgeScrollSequence />
-      </section>
+        <div className="h-24 bg-gradient-to-b from-dark-bg to-cream" />
+      </div>
 
       {/* Three layer maze - Warm cream */}
       <Section variant="cream">

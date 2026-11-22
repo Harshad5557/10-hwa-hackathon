@@ -12,10 +12,10 @@ interface ScrollSequenceProps {
 
 const CHAPTERS = [
   { at: 0.0, text: "Feast Forge Smart Feeder Maze" },
-  { at: 0.25, text: "Every component has a purpose." },
-  { at: 0.5, text: "3 layers, one integrated system." },
-  { at: 0.75, text: "Precision begins with thoughtful design." },
-  { at: 1.0, text: "Fully revealed." },
+  { at: 0.2, text: "Every component has a purpose." },
+  { at: 0.45, text: "3 layers, one integrated system." },
+  { at: 0.7, text: "Precision begins with thoughtful design." },
+  { at: 0.95, text: "Fully revealed." },
 ];
 
 export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
@@ -29,6 +29,8 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [activeChapter, setActiveChapter] = useState(CHAPTERS[0]);
   const [progress, setProgress] = useState(0);
+  const [introOpacity, setIntroOpacity] = useState(1);
+  const [outroOpacity, setOutroOpacity] = useState(0);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -56,7 +58,6 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
           loaded++;
           setLoadedCount(loaded);
           if (loaded === 1) {
-            // Draw first frame as soon as it's available
             drawFrameRef.current?.(0);
           }
           if (loaded === FRAME_COUNT) {
@@ -73,12 +74,8 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
       });
     };
 
-    // Load first frame immediately, then rest in batches with concurrency limit
     const loadAll = async () => {
-      // First frame first
       await loadImage(0);
-
-      // Load rest in batches of 20 with small delays
       const batchSize = 20;
       for (let i = 1; i < FRAME_COUNT; i += batchSize) {
         const batch = [];
@@ -86,7 +83,6 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
           batch.push(loadImage(j));
         }
         await Promise.all(batch);
-        // Small delay between batches to avoid blocking
         await new Promise((r) => setTimeout(r, 50));
       }
     };
@@ -113,11 +109,9 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
       canvas.height = height;
     }
 
-    // High quality smoothing
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    // Cover fit with center crop - keeps product large and sharp
     const imgAspect = img.naturalWidth / img.naturalHeight;
     const canvasAspect = width / height;
     let drawW: number, drawH: number, drawX: number, drawY: number;
@@ -142,7 +136,7 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     drawFrameRef.current = drawFrame;
   }, [drawFrame]);
 
-  // Scroll-driven frame selection
+  // Scroll-driven frame selection with smooth transitions
   useEffect(() => {
     if (reducedMotion) return;
 
@@ -154,6 +148,11 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
       const p = Math.max(0, Math.min(1, scrolled / scrollHeight));
 
       setProgress(p);
+
+      // Intro fade: first 5% of scroll
+      setIntroOpacity(p < 0.05 ? 1 - p / 0.05 : 0);
+      // Outro fade: last 5% of scroll
+      setOutroOpacity(p > 0.95 ? (p - 0.95) / 0.05 : 0);
 
       const frameIndex = Math.min(
         FRAME_COUNT - 1,
@@ -211,11 +210,35 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     <div ref={containerRef} className={`relative ${className ?? ""}`} style={{ height: "500vh" }}>
       {/* Sticky canvas container */}
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-dark-bg">
+        {/* Subtle radial gradient background that shifts with progress */}
+        <div
+          className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
+          style={{
+            background: `radial-gradient(ellipse 70% 50% at 50% 50%, rgba(245,158,11,${0.03 + progress * 0.05}), transparent 70%)`,
+          }}
+        />
+
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full"
           style={{ display: "block" }}
         />
+
+        {/* Intro fade overlay - fades out as animation begins */}
+        {introOpacity > 0 && (
+          <div
+            className="absolute inset-0 bg-dark-bg pointer-events-none"
+            style={{ opacity: introOpacity }}
+          />
+        )}
+
+        {/* Outro fade overlay - fades in at the end */}
+        {outroOpacity > 0 && (
+          <div
+            className="absolute inset-0 bg-dark-bg pointer-events-none"
+            style={{ opacity: outroOpacity }}
+          />
+        )}
 
         {/* Loading indicator */}
         {!isReady && (
@@ -232,14 +255,17 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
           </div>
         )}
 
-        {/* Chapter text overlay */}
-        <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-16 md:pb-24">
-          <div className="max-w-2xl mx-auto px-6 text-center">
+        {/* Chapter text - minimal, positioned at bottom to avoid covering product */}
+        <div
+          className="absolute inset-0 pointer-events-none flex items-end justify-center pb-20 md:pb-28"
+          style={{ opacity: 1 - introOpacity - outroOpacity }}
+        >
+          <div className="max-w-xl mx-auto px-6 text-center">
             <p
               key={activeChapter.text}
-              className="text-2xl md:text-4xl font-bold text-white/90 tracking-tight animate-fade-in"
+              className="text-xl md:text-3xl font-bold text-white/80 tracking-tight animate-fade-in"
               style={{
-                textShadow: "0 2px 20px rgba(0,0,0,0.8)",
+                textShadow: "0 2px 24px rgba(0,0,0,0.9)",
               }}
             >
               {activeChapter.text}
@@ -248,8 +274,11 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
         </div>
 
         {/* Progress indicator */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
-          <div className="w-32 h-0.5 bg-white/10 rounded-full overflow-hidden">
+        <div
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2"
+          style={{ opacity: 1 - introOpacity - outroOpacity }}
+        >
+          <div className="w-24 h-0.5 bg-white/10 rounded-full overflow-hidden">
             <div
               className="h-full bg-amber-500 transition-all duration-100"
               style={{
