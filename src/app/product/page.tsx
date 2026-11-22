@@ -10,13 +10,6 @@ import { useToast } from "@/lib/toast-context";
 import { cn } from "@/lib/utils";
 import { Section, SectionHeader, Button } from "@/components/ui";
 
-const galleryImages = [
-  { src: "/images/product/hero.jpg", alt: "Feast Forge Smart Feeder Maze - Main view", label: "Main" },
-  { src: "/images/product/hero-alt.jpg", alt: "Feast Forge Smart Feeder Maze - Alternate view", label: "Angle" },
-  { src: "/images/exploded/exploded-view.jpg", alt: "Feast Forge - Exploded view", label: "Exploded" },
-  { src: "/images/product/size-reference.jpg", alt: "Feast Forge - Size reference", label: "Size" },
-];
-
 export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedTier, setSelectedTier] = useState("smart");
@@ -26,13 +19,20 @@ export default function ProductPage() {
 
   const tier = BRAND.product.tiers.find((t) => t.id === selectedTier)!;
 
+  const galleryImages = [
+    { src: tier.image || "/images/product/hero.jpg", alt: `${tier.name} - Main view`, label: "Main" },
+    { src: "/images/product/hero-alt.jpg", alt: "Feast Forge Smart Feeder Maze - Alternate view", label: "Angle" },
+    { src: "/images/exploded/exploded-view.jpg", alt: "Feast Forge - Exploded view", label: "Exploded" },
+    { src: "/images/product/size-reference.jpg", alt: "Feast Forge - Size reference", label: "Size" },
+  ];
+
   const handleAddToCart = () => {
     addItem({
       id: `ff-${selectedTier}`,
       name: tier.name,
       price: tier.price,
       quantity,
-      image: "/images/product/hero.jpg",
+      image: tier.image || "/images/product/hero.jpg",
     });
     showToast(`${tier.name} added to cart`);
   };
