@@ -12,16 +12,74 @@ const steps = ["Shipping", "Payment", "Review"];
 export default function CheckoutPage() {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({ email: "", name: "", address: "", city: "", zip: "", country: "US" });
-  const { subtotal, itemCount, clearCart } = useCart();
+  const [cardData, setCardData] = useState({ number: "", expiry: "", cvc: "" });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState("");
+  const { items, subtotal, itemCount, clearCart } = useCart();
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (step < steps.length - 1) {
       setStep(step + 1);
-    } else {
+      return;
+    }
+
+    // Final step: process payment
+    setIsProcessing(true);
+
+    try {
+      // Validate order server-side first
+      const validateRes = await fetch("/api/validate-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+
+      if (!validateRes.ok) {
+        const data = await validateRes.json();
+        throw new Error(data.error || "Order validation failed");
+      }
+
+      const validated = await validateRes.json();
+
+      // Process checkout
+      const checkoutRes = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: validated.items,
+          shipping: {
+            address: formData.address,
+            city: formData.city,
+            zip: formData.zip,
+            country: formData.country,
+          },
+          customer: {
+            name: formData.name,
+            email: formData.email,
+          },
+        }),
+      });
+
+      if (!checkoutRes.ok) {
+        const data = await checkoutRes.json();
+        throw new Error(data.error || "Checkout failed");
+      }
+
+      const order = await checkoutRes.json();
+
+      // Store order details for confirmation page
+      sessionStorage.setItem("ff-order", JSON.stringify(order));
+
       clearCart();
       router.push("/order-confirmation");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -35,6 +93,13 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-bold text-white mb-6">Checkout</h1>
         <p className="text-muted mb-12">Complete your order. No payment information is stored on our servers.</p>
 
+        {error && (
+          <div className="mb-6 p-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Progress */}
         <div className="flex gap-8 mb-12">
           {steps.map((s, i) => (
             <div key={s} className="flex flex-col items-center gap-2 relative">
@@ -123,7 +188,7 @@ export default function CheckoutPage() {
                     <CreditCard className="w-6 h-6 text-amber-400" />
                     <div>
                       <h3 className="text-white font-bold">Payment (sandbox)</h3>
-                      <p className="text-xs text-muted">This is a payment sandbox. No real charges are processed.</p>
+                      <p className="text-xs text-muted">This is a payment sandbox. No real charges are processed. No card data is stored.</p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -131,6 +196,8 @@ export default function CheckoutPage() {
                     <input
                       type="text"
                       maxLength={19}
+                      value={cardData.number}
+                      onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-muted/50 focus:outline-none focus:ring-2 focus:ring-amber-500"
                       placeholder="4242 4242 4242 4242"
                     />
@@ -141,6 +208,8 @@ export default function CheckoutPage() {
                       <input
                         type="text"
                         maxLength={5}
+                        value={cardData.expiry}
+                        onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
                         className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-muted/50 focus:outline-none focus:ring-2 focus:ring-amber-500"
                         placeholder="12/34"
                       />
@@ -150,6 +219,8 @@ export default function CheckoutPage() {
                       <input
                         type="text"
                         maxLength={4}
+                        value={cardData.cvc}
+                        onChange={(e) => setCardData({ ...cardData, cvc: e.target.value })}
                         className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-muted/50 focus:outline-none focus:ring-2 focus:ring-amber-500"
                         placeholder="123"
                       />
@@ -175,7 +246,7 @@ export default function CheckoutPage() {
                         <span className="text-white">Calculated</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted">Tax</span>
+                        <span className="text-muted">Tax (8%)</span>
                         <span className="text-white">Calculated</span>
                       </div>
                       <div className="pt-4 border-t border-white/10 flex justify-between text-lg font-bold text-white">
@@ -200,14 +271,16 @@ export default function CheckoutPage() {
                 )}
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-amber-500 text-charcoal font-bold rounded-xl hover:bg-white transition-colors"
+                  disabled={isProcessing}
+                  className="px-8 py-3 bg-amber-500 text-charcoal font-bold rounded-xl hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {step === steps.length - 1 ? "Place order" : "Continue"}
+                  {isProcessing ? "Processing..." : step === steps.length - 1 ? "Place order" : "Continue"}
                 </button>
               </div>
             </form>
           </div>
 
+          {/* Order summary sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 p-8 rounded-3xl border border-white/10 bg-white/5">
               <h3 className="text-lg font-bold text-white mb-6">Order summary</h3>
@@ -217,8 +290,8 @@ export default function CheckoutPage() {
                   <span className="text-white font-bold">$ {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="pt-4 border-t border-white/10 space-y-2 text-sm">
-                  <div className="flex justify-between"><span>Shipping</span><span className="text-white">Calculated</span></div>
-                  <div className="flex justify-between"><span>Tax</span><span className="text-white">Calculated</span></div>
+                  <div className="flex justify-between"><span className="text-muted">Shipping</span><span className="text-white">Calculated</span></div>
+                  <div className="flex justify-between"><span className="text-muted">Tax (8%)</span><span className="text-white">Calculated</span></div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-white/10 flex justify-between text-xl font-bold text-white">
                   <span>Total</span>
@@ -226,7 +299,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
               <div className="mt-8 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-sm text-amber-300">
-                <AlertTriangle className="w-4 h-4 mr-2" />
+                <AlertTriangle className="w-4 h-4 mr-2 inline" />
                 Sandbox environment — no real transactions processed.
               </div>
             </div>
@@ -236,3 +309,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
