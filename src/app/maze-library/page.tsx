@@ -82,24 +82,33 @@ export default function MazeLibraryPage() {
             </p>
           </div>
           <div className="relative rounded-3xl overflow-hidden border border-white/10">
-            <Image
-              src="/images/exploded/exploded-view.jpg"
-              alt={`Feast Forge ${layerInfo.name} in exploded view`}
-              width={800}
-              height={600}
-              className="w-full h-auto"
-            />
-            <div className="absolute inset-0 pointer-events-none">
-              {selectedLayer === "upper" && (
-                <div className="absolute top-[48%] left-[35%] -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-2 border-amber-500 shadow-lg shadow-amber-500/40 animate-pulse" />
-              )}
-              {selectedLayer === "middle" && (
-                <div className="absolute top-[55%] left-[65%] -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border-2 border-amber-500 shadow-lg shadow-amber-500/40 animate-pulse" />
-              )}
-              {selectedLayer === "lower" && (
-                <div className="absolute top-[62%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full border-2 border-amber-500 shadow-lg shadow-amber-500/40 animate-pulse" />
-              )}
-            </div>
+            {selectedLayer === "upper" && (
+              <Image
+                src="/images/accessories/maze-upper.jpg"
+                alt="Feast Forge upper maze disk (smallest)"
+                width={800}
+                height={600}
+                className="w-full h-auto"
+              />
+            )}
+            {selectedLayer === "middle" && (
+              <Image
+                src="/images/accessories/maze-middle.jpg"
+                alt="Feast Forge middle maze disk (medium)"
+                width={800}
+                height={600}
+                className="w-full h-auto"
+              />
+            )}
+            {selectedLayer === "lower" && (
+              <Image
+                src="/images/accessories/maze-lower.jpg"
+                alt="Feast Forge lower maze disk (largest)"
+                width={800}
+                height={600}
+                className="w-full h-auto"
+              />
+            )}
           </div>
         </div>
 
