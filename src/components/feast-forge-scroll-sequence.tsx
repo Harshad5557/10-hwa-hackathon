@@ -39,59 +39,8 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Preload images with proper decoding
-  useEffect(() => {
-    const images: HTMLImageElement[] = new Array(FRAME_COUNT);
-    let loaded = 0;
-
-    const loadImage = (index: number): Promise<void> => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.src = FRAME_PATH(index);
-        img.onload = async () => {
-          try {
-            await img.decode();
-          } catch {
-            // decode not supported or failed, continue
-          }
-          images[index] = img;
-          loaded++;
-          setLoadedCount(loaded);
-          if (loaded === 1) {
-            drawFrameRef.current?.(0);
-          }
-          if (loaded === FRAME_COUNT) {
-            setIsReady(true);
-          }
-          resolve();
-        };
-        img.onerror = () => {
-          loaded++;
-          setLoadedCount(loaded);
-          resolve();
-        };
-        images[index] = img;
-      });
-    };
-
-    const loadAll = async () => {
-      await loadImage(0);
-      const batchSize = 20;
-      for (let i = 1; i < FRAME_COUNT; i += batchSize) {
-        const batch = [];
-        for (let j = i; j < Math.min(i + batchSize, FRAME_COUNT); j++) {
-          batch.push(loadImage(j));
-        }
-        await Promise.all(batch);
-        await new Promise((r) => setTimeout(r, 50));
-      }
-    };
-
-    loadAll();
-    imagesRef.current = images;
-  }, []);
-
-  const drawFrameRef = useRef<((frameIndex: number) => void) | null>(null);
+  // Preload images with proper decoding - moved after drawFrame definition
+  // This will be called via a separate effect below
 
   const drawFrame = useCallback((frameIndex: number) => {
     const canvas = canvasRef.current;
@@ -132,8 +81,56 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     ctx.drawImage(img, drawX, drawY, drawW, drawH);
   }, []);
 
+  // Preload images with proper decoding
   useEffect(() => {
-    drawFrameRef.current = drawFrame;
+    const images: HTMLImageElement[] = new Array(FRAME_COUNT);
+    let loaded = 0;
+
+    const loadImage = (index: number): Promise<void> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = FRAME_PATH(index);
+        img.onload = async () => {
+          try {
+            await img.decode();
+          } catch {
+            // decode not supported or failed, continue
+          }
+          images[index] = img;
+          loaded++;
+          setLoadedCount(loaded);
+          if (loaded === 1) {
+            drawFrame(0);
+          }
+          if (loaded === FRAME_COUNT) {
+            setIsReady(true);
+          }
+          resolve();
+        };
+        img.onerror = () => {
+          loaded++;
+          setLoadedCount(loaded);
+          resolve();
+        };
+        images[index] = img;
+      });
+    };
+
+    const loadAll = async () => {
+      await loadImage(0);
+      const batchSize = 20;
+      for (let i = 1; i < FRAME_COUNT; i += batchSize) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + batchSize, FRAME_COUNT); j++) {
+          batch.push(loadImage(j));
+        }
+        await Promise.all(batch);
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    };
+
+    loadAll();
+    imagesRef.current = images;
   }, [drawFrame]);
 
   // Scroll-driven frame selection with smooth transitions
