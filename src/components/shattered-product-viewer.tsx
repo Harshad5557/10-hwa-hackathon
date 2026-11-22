@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 
 interface ShatteredViewerProps {
   className?: string;
@@ -20,94 +20,153 @@ export function ShatteredProductViewer({ className, scrollProgress = 0 }: Shatte
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 2, 6);
+    camera.position.set(0, 2, 7);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
     containerRef.current.appendChild(renderer.domElement);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    keyLight.position.set(3, 5, 4);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    keyLight.position.set(3, 6, 4);
+    keyLight.castShadow = true;
     scene.add(keyLight);
 
-    const amberLight = new THREE.PointLight(0xFD9E0B, 2, 10);
-    amberLight.position.set(-3, 2, 3);
+    const amberLight = new THREE.PointLight(0xF59E0B, 2.5, 12);
+    amberLight.position.set(-2, 1, 3);
     scene.add(amberLight);
 
     // Materials
-    const charcoalMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.6, metalness: 0.3 });
-    const glassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, roughness: 0.1, metalness: 0 });
-    const amberMat = new THREE.MeshStandardMaterial({ color: 0xFD9E0B, emissive: 0xFD9E0B, emissiveIntensity: 1.5 });
+    const charcoalMat = new THREE.MeshStandardMaterial({ color: 0x1C1C1E, roughness: 0.6, metalness: 0.35 });
+    const charcoalMatte = new THREE.MeshStandardMaterial({ color: 0x1C1C1E, roughness: 0.85, metalness: 0.1 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0 });
+    const amberMat = new THREE.MeshStandardMaterial({ color: 0xF59E0B, emissive: 0xF59E0B, emissiveIntensity: 1.2 });
+    const pcbMat = new THREE.MeshStandardMaterial({ color: 0x2A2A2A, roughness: 0.9, metalness: 0.2 });
 
-    // Base
-    const baseGeo = new THREE.CylinderGeometry(1.6, 1.6, 0.4, 32);
-    const base = new THREE.Mesh(baseGeo, charcoalMat);
-    base.position.y = -0.5;
-    base.userData = { originalPos: base.position.clone(), offset: new THREE.Vector3(0, -1.5, 0) };
-    scene.add(base);
+    const parts: { mesh: THREE.Mesh; original: THREE.Vector3; offset: THREE.Vector3; isDisk?: boolean }[] = [];
 
-    // Hopper (transparent cylinder)
-    const hopperGeo = new THREE.CylinderGeometry(0.9, 0.9, 1.4, 32);
-    const hopper = new THREE.Mesh(hopperGeo, glassMat);
-    hopper.position.y = 0.4;
-    hopper.userData = { originalPos: hopper.position.clone(), offset: new THREE.Vector3(0, 2, 0) };
-    scene.add(hopper);
+    const addPart = (geo: THREE.BufferGeometry, mat: THREE.Material, pos: THREE.Vector3, offset: THREE.Vector3, isDisk = false) => {
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.copy(pos);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData = { original: pos.clone(), offset: offset.clone() };
+      scene.add(mesh);
+      parts.push({ mesh, original: pos.clone(), offset: offset.clone(), isDisk });
+      return mesh;
+    };
 
-    // Portion gate (ring)
-    const gateGeo = new THREE.RingGeometry(0.85, 0.95, 32);
-    const gate = new THREE.Mesh(gateGeo, charcoalMat);
-    gate.rotation.x = Math.PI / 2;
-    gate.position.y = -0.3;
-    gate.userData = { originalPos: gate.position.clone(), offset: new THREE.Vector3(0, -2, 0) };
-    scene.add(gate);
+    // 1. Base (wide stable base)
+    addPart(
+      new THREE.CylinderGeometry(1.7, 1.7, 0.45, 40),
+      charcoalMatte,
+      new THREE.Vector3(0, -0.6, 0),
+      new THREE.Vector3(0, -2.2, 0)
+    );
 
-    // Three maze disks (smallest upper, medium middle, largest lower)
-    const disks: THREE.Mesh[] = [];
-    const diskData = [
-      { radius: 0.7, height: 0.08, y: 0.15, label: "upper" },
-      { radius: 1.0, height: 0.08, y: 0.05, label: "middle" },
-      { radius: 1.35, height: 0.08, y: -0.05, label: "lower" },
-    ];
+    // Base inner track/recess
+    addPart(
+      new THREE.RingGeometry(0.8, 1.55, 40),
+      charcoalMat,
+      new THREE.Vector3(0, -0.32, 0.01),
+      new THREE.Vector3(0, -1.8, 0.01)
+    );
 
-    diskData.forEach((d, i) => {
-      const geo = new THREE.CylinderGeometry(d.radius, d.radius, d.height, 64);
-      const disk = new THREE.Mesh(geo, charcoalMat);
-      disk.position.y = d.y;
-      disk.userData = { originalPos: disk.position.clone(), offset: new THREE.Vector3((i - 1) * 1.2, 0, 0) };
-      scene.add(disk);
-      disks.push(disk);
-    });
-
-    // Amber LED ring
-    const ledGeo = new THREE.TorusGeometry(0.92, 0.03, 16, 64);
-    const ledRing = new THREE.Mesh(ledGeo, amberMat);
+    // 2. Amber LED ring (at base level)
+    const ledRing = addPart(
+      new THREE.TorusGeometry(0.95, 0.035, 24, 64),
+      amberMat,
+      new THREE.Vector3(0, -0.28, 0.02),
+      new THREE.Vector3(0, -2.6, 0.02)
+    );
     ledRing.rotation.x = Math.PI / 2;
-    ledRing.position.y = -0.28;
-    ledRing.userData = { originalPos: ledRing.position.clone(), offset: new THREE.Vector3(0, -2.5, 0) };
-    scene.add(ledRing);
 
-    // Sensors/control electronics (small box)
-    const sensorGeo = new THREE.BoxGeometry(0.4, 0.2, 0.4);
-    const sensor = new THREE.Mesh(sensorGeo, charcoalMat);
-    sensor.position.set(1.2, -0.4, 0);
-    sensor.userData = { originalPos: sensor.position.clone(), offset: new THREE.Vector3(2.5, 0, 0) };
-    scene.add(sensor);
+    // 3. Smart PCB & battery (circular board)
+    addPart(
+      new THREE.CylinderGeometry(0.75, 0.75, 0.12, 40),
+      pcbMat,
+      new THREE.Vector3(0, -0.18, 0.03),
+      new THREE.Vector3(0, -1.6, 0.03)
+    );
 
-    // Motor (cylinder behind base)
-    const motorGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.5, 16);
-    const motor = new THREE.Mesh(motorGeo, charcoalMat);
-    motor.position.set(-1.2, -0.5, -0.5);
-    motor.userData = { originalPos: motor.position.clone(), offset: new THREE.Vector3(-2.5, 0, 0) };
-    scene.add(motor);
+    // 4. Gears & motor assembly
+    const motorGroup = new THREE.Group();
+    const motorBody = addPart(
+      new THREE.CylinderGeometry(0.35, 0.35, 0.5, 24),
+      charcoalMat,
+      new THREE.Vector3(0, 0.08, 0),
+      new THREE.Vector3(0, -1.4, 0)
+    );
+    const motorTop = addPart(
+      new THREE.CylinderGeometry(0.2, 0.2, 0.15, 24),
+      charcoalMatte,
+      new THREE.Vector3(0, 0.4, 0),
+      new THREE.Vector3(0, -1.0, 0)
+    );
+    motorGroup.position.set(0, 0, 0);
+    scene.add(motorGroup);
+    parts.push({ mesh: motorGroup as any, original: new THREE.Vector3(0, 0, 0), offset: new THREE.Vector3(0, -1.4, 0) });
 
-    const allObjects = [base, hopper, gate, ...disks, ledRing, sensor, motor];
+    // 5. Maze Layer 3 (largest, lowest disk)
+    const layer3 = addPart(
+      new THREE.CylinderGeometry(1.35, 1.35, 0.09, 64),
+      charcoalMat,
+      new THREE.Vector3(0, 0.15, 0),
+      new THREE.Vector3(0, -1.2, 0)
+    );
+    layer3.userData.isDisk = true;
 
-    let rotationSpeed = 0.008;
+    // 6. Maze Layer 2 (medium disk)
+    const layer2 = addPart(
+      new THREE.CylinderGeometry(1.0, 1.0, 0.09, 64),
+      charcoalMat,
+      new THREE.Vector3(0, 0.27, 0),
+      new THREE.Vector3(-1.1, 0, 0)
+    );
+    layer2.userData.isDisk = true;
+
+    // 7. Maze Layer 1 (smallest, upper disk)
+    const layer1 = addPart(
+      new THREE.CylinderGeometry(0.7, 0.7, 0.09, 64),
+      charcoalMat,
+      new THREE.Vector3(0, 0.39, 0),
+      new THREE.Vector3(1.1, 0, 0)
+    );
+    layer1.userData.isDisk = true;
+
+    // 8. Portion gate (ring between hopper and maze layer 1)
+    addPart(
+      new THREE.RingGeometry(0.85, 0.95, 40),
+      charcoalMat,
+      new THREE.Vector3(0, 0.48, 0),
+      new THREE.Vector3(0, -2.0, 0)
+    );
+
+    // 9. Transparent hopper
+    const hopper = addPart(
+      new THREE.CylinderGeometry(0.9, 0.9, 1.3, 40),
+      glassMat,
+      new THREE.Vector3(0, 1.15, 0),
+      new THREE.Vector3(0, 2.2, 0)
+    );
+    hopper.userData.original.y = 1.15;
+
+    // 10. Top gap (lid)
+    addPart(
+      new THREE.CylinderGeometry(0.98, 0.98, 0.18, 40),
+      charcoalMatte,
+      new THREE.Vector3(0, 1.9, 0),
+      new THREE.Vector3(0, 2.8, 0)
+    );
+
+    const allMeshes = parts.map((p) => p.mesh);
+
+    let rotationSpeed = 0.006;
     const autoRotate = true;
 
     const animate = () => {
@@ -115,24 +174,26 @@ export function ShatteredProductViewer({ className, scrollProgress = 0 }: Shatte
 
       const p = Math.min(Math.max(scrollProgress, 0), 1);
 
-      // Interpolate each object between original and scattered position
-      allObjects.forEach((obj) => {
-        const targetX = obj.userData.originalPos.x + obj.userData.offset.x * p;
-        const targetY = obj.userData.originalPos.y + obj.userData.offset.y * p;
-        const targetZ = obj.userData.originalPos.z + obj.userData.offset.z * p;
+      allMeshes.forEach((obj) => {
+        const part = parts.find((part) => part.mesh === obj);
+        if (!part) return;
+
+        const targetX = part.original.x + part.offset.x * p;
+        const targetY = part.original.y + part.offset.y * p;
+        const targetZ = part.original.z + part.offset.z * p;
         obj.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.1);
 
-        // Rotate disks
-        if (disks.includes(obj)) {
+        if (part.isDisk) {
           obj.rotation.y += rotationSpeed * (1 - p * 0.5);
         }
       });
 
-      // Amber ring pulses
-      ledRing.material.emissiveIntensity = 1.5 + Math.sin(Date.now() * 0.005) * 0.5;
+      // Amber LED pulse
+      const time = Date.now() * 0.003;
+      amberMat.emissiveIntensity = 1.2 + Math.sin(time) * 0.4;
 
       if (autoRotate) {
-        scene.rotation.y += 0.002 * (1 - p * 0.5);
+        scene.rotation.y += 0.0015 * (1 - p * 0.5);
       }
 
       renderer.render(scene, camera);
@@ -141,8 +202,9 @@ export function ShatteredProductViewer({ className, scrollProgress = 0 }: Shatte
     animate();
 
     const handleResize = () => {
-      const w = containerRef.current!.clientWidth || 600;
-      const h = containerRef.current!.clientHeight || 500;
+      if (!containerRef.current) return;
+      const w = containerRef.current.clientWidth || 600;
+      const h = containerRef.current.clientHeight || 500;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);

@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart-context";
 import { Menu, X, ShoppingCart, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/brand";
+import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -25,14 +26,14 @@ export function Navbar() {
     <nav
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        scrolled ? "glass-header scroll-shadow" : "transparent-nav"
+        scrolled ? "glass-header" : "transparent-nav"
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-ff bg-amber-500 flex items-center justify-center">
               <span className="text-charcoal font-bold text-sm">F</span>
             </div>
             <span className="font-bold text-xl tracking-tight text-white">Feast<span className="text-amber-500">Forge</span></span>
@@ -61,14 +62,14 @@ export function Navbar() {
               <button
                 onClick={() => router.push("/cart")}
                 className={cn(
-                  "relative w-9 h-9 rounded-full bg-charcoal/50 border border-white/10 flex items-center justify-center text-muted hover:text-white hover:bg-charcoal/70 transition-all",
+                  "relative w-10 h-10 rounded-ff bg-charcoal/50 border border-white/10 flex items-center justify-center text-muted hover:text-white hover:bg-charcoal/70 transition-all",
                   itemCount > 0 && "amber-glow"
                 )}
                 aria-label="Cart"
               >
                 <ShoppingCart className="w-5 h-5" />
                 {itemCount > 0 && (
-                  <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-amber-500 text-charcoal text-xs font-bold flex items-center justify-center">
+                  <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-amber-500 text-charcoal text-[10px] font-bold flex items-center justify-center">
                     {itemCount}
                   </span>
                 )}
@@ -106,7 +107,7 @@ export function Navbar() {
             ))}
             <Link href="/compare" onClick={() => setMobileOpen(false)} className="block py-3 text-lg font-medium text-white hover:text-amber-500">Compare</Link>
             <div className="pt-6 border-t border-white/10 flex items-center gap-4">
-              <button className="flex-1 py-3 bg-amber-500 text-charcoal font-bold rounded-lg text-center hover:bg-white/90 transition-colors" onClick={() => router.push("/cart")}>
+              <button className="flex-1 py-3 bg-amber-500 text-charcoal font-bold rounded-ff text-center hover:bg-white/90 transition-colors" onClick={() => router.push("/cart")}>
                 Cart ({itemCount})
               </button>
             </div>

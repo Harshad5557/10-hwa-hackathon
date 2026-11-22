@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ShatteredProductViewer } from "@/components/shattered-product-viewer";
-import { BRAND, NAV_LINKS } from "@/lib/brand";
-import { ChevronRight, Cpu, ShieldCheck, Wifi, Smartphone, BarChart3, Settings } from "lucide-react";
+import { BRAND } from "@/lib/brand";
+import { ChevronRight, Cpu, ShieldCheck, Wifi, Smartphone, BarChart3, Settings, CheckCircle } from "lucide-react";
+import { Section, SectionHeader, Button } from "@/components/ui";
 
 export default function ProductPage() {
   return (
