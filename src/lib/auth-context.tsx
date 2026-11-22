@@ -32,6 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
+  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; email: string; password: string }[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ff-registered-users");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return [];
+        }
+      }
+    }
+    return [];
+  });
+
   useEffect(() => {
     if (user) {
       localStorage.setItem("ff-user", JSON.stringify(user));
@@ -40,22 +54,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  useEffect(() => {
+    localStorage.setItem("ff-registered-users", JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
+
   const login = useCallback((email: string, password: string) => {
-    // Simple validation - in production this would call an API
-    if (email && password.length >= 8) {
-      setUser({ name: email.split("@")[0], email });
+    // Only registered users can sign in
+    const found = registeredUsers.find(
+      (u) => u.email === email && u.password === password
+    );
+    if (found) {
+      setUser({ name: found.name, email: found.email });
       return true;
     }
     return false;
-  }, []);
+  }, [registeredUsers]);
 
   const register = useCallback((name: string, email: string, password: string) => {
-    if (name && email && password.length >= 8) {
-      setUser({ name, email });
-      return true;
-    }
-    return false;
-  }, []);
+    if (!name || !email || password.length < 8) return false;
+    // Check if user already exists
+    if (registeredUsers.some((u) => u.email === email)) return false;
+    const newUser = { name, email, password };
+    setRegisteredUsers((prev) => [...prev, newUser]);
+    setUser({ name, email });
+    return true;
+  }, [registeredUsers]);
 
   const logout = useCallback(() => {
     setUser(null);

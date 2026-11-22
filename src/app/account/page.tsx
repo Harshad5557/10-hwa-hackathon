@@ -41,7 +41,7 @@ export default function AccountPage() {
       setSuccess("Sign in successful. Welcome back!");
       showToast("Signed in successfully");
     } else {
-      setError("Invalid email or password. Password must be at least 8 characters.");
+      setError("Invalid email or password, or account not registered. Please register first.");
     }
   };
 
@@ -66,10 +66,10 @@ export default function AccountPage() {
     }
     const success = register(registerData.name, registerData.email, registerData.password);
     if (success) {
-      setSuccess("Account created successfully. You can now sign in.");
+      setSuccess("Account created successfully. You are now signed in.");
       showToast("Account created successfully");
     } else {
-      setError("Registration failed. Please check your information.");
+      setError("Registration failed. This email may already be registered, or password is too short.");
     }
   };
 
