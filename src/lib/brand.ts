@@ -1,0 +1,88 @@
+export const BRAND = {
+  name: "Feast Forge",
+  tagline: "A new puzzle every time.",
+  supportingTagline: "Turn everyday feeding into a more engaging experience.",
+  colors: {
+    amber: "#FD9E0B",
+    charcoal: "#1C1C1E",
+    cream: "#FFF0E0",
+    darkBg: "#0B0B0D",
+    secondaryDark: "#171717",
+    white: "#FFFFFF",
+    muted: "#B8B8B8",
+  },
+  product: {
+    name: "Feast Forge Smart Feeder Maze",
+    tiers: [
+      {
+        id: "light",
+        name: "Feast Forge Light",
+        subtitle: "Starter",
+        description: "Validated maze library. Manual difficulty. Local controls. Basic portion limits.",
+        price: 129,
+        features: ["Validated maze library", "Manual difficulty", "Local controls", "Basic portion limits"],
+        hopperCapacity: "up to 400g",
+      },
+      {
+        id: "smart",
+        name: "Feast Forge Smart",
+        subtitle: "Expanded",
+        description: "Expanded validated maze library. App pairing. Feeding schedules. Feeding history. Device status. Wi-Fi notifications.",
+        price: 199,
+        popular: true,
+        features: ["Expanded validated maze library", "App pairing", "Feeding schedules", "Feeding history", "Device status", "Wi-Fi notifications"],
+        hopperCapacity: "up to 400g",
+      },
+      {
+        id: "pro",
+        name: "Feast Forge Pro",
+        subtitle: "Full",
+        description: "Full validated configuration library. Adaptive difficulty recommendations. Advanced analytics. Expanded app controls.",
+        price: 279,
+        features: ["Full validated configuration library", "Adaptive difficulty recommendations", "Advanced analytics", "Expanded app controls"],
+        hopperCapacity: "up to 400g",
+      },
+    ],
+    specs: [
+      { label: "Hopper Capacity", value: "Up to 400g (proposed target)" },
+      { label: "Height", value: "Approx. 28cm (proposed target)" },
+      { label: "Width", value: "Approx. 22cm (proposed target)" },
+      { label: "Rotating Disks", value: "Three" },
+      { label: "Index Positions", value: "Four per disk" },
+      { label: "Position Combinations", value: "64 theoretical (proposed target)" },
+      { label: "Connectivity", value: "USB-C power, Bluetooth Low Energy, Wi-Fi (approach)" },
+    ],
+    geometry: [
+      { id: 1, name: "Transparent removable hopper", color: "transparent" },
+      { id: 2, name: "Portion gate", color: "charcoal" },
+      { id: 3, name: "Upper circular maze disk (smallest)", color: "charcoal" },
+      { id: 4, name: "Middle circular maze disk (medium)", color: "charcoal" },
+      { id: 5, name: "Lower circular maze disk (largest)", color: "charcoal" },
+      { id: 6, name: "Enclosed motor and drive system", color: "charcoal" },
+      { id: 7, name: "Sensors and control electronics", color: "charcoal" },
+      { id: 8, name: "Amber LED status ring", color: "amber" },
+      { id: 9, name: "Wide stable base", color: "charcoal" },
+    ],
+  },
+};
+
+export const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/product", label: "Product" },
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/technology", label: "Technology" },
+  { href: "/maze-library", label: "Maze Library" },
+  { href: "/app", label: "App" },
+  { href: "/accessories", label: "Accessories" },
+  { href: "/reviews", label: "Reviews" },
+  { href: "/support", label: "Support" },
+  { href: "/our-story", label: "Our Story" },
+];
+
+export const LEGAL_LINKS = [
+  { href: "/shipping", label: "Shipping" },
+  { href: "/returns", label: "Returns" },
+  { href: "/warranty", label: "Warranty" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+];
