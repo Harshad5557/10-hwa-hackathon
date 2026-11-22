@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useCart } from "@/lib/cart-context";
-import { Menu, X, ShoppingCart, Search, User } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { Menu, X, ShoppingCart, Search, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { itemCount } = useCart();
+  const { isLoggedIn, user, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -57,9 +59,22 @@ export function Navbar() {
             <Link href="/compare" className="text-sm font-medium text-muted hover:text-white">Compare</Link>
 
             <div className="flex items-center gap-4">
-              <button className="text-muted hover:text-white transition-colors" aria-label="Account">
-                <User className="w-5 h-5" />
-              </button>
+              {isLoggedIn ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted">{user?.name}</span>
+                  <button
+                    onClick={logout}
+                    className="text-muted hover:text-white transition-colors"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <Link href="/account" className="text-muted hover:text-white transition-colors" aria-label="Account">
+                  <User className="w-5 h-5" />
+                </Link>
+              )}
               <button
                 onClick={() => router.push("/cart")}
                 className={cn(

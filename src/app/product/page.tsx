@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingCart, CheckCircle, Package, Shield, Wrench, Droplets, Info } from "lucide-react";
 import { BRAND } from "@/lib/brand";
 import { useCart } from "@/lib/cart-context";
+import { useToast } from "@/lib/toast-context";
 import { cn } from "@/lib/utils";
 import { Section, SectionHeader, Button } from "@/components/ui";
 
@@ -21,6 +22,7 @@ export default function ProductPage() {
   const [selectedTier, setSelectedTier] = useState("smart");
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
+  const { showToast } = useToast();
 
   const tier = BRAND.product.tiers.find((t) => t.id === selectedTier)!;
 
@@ -32,6 +34,7 @@ export default function ProductPage() {
       quantity,
       image: "/images/product/hero.jpg",
     });
+    showToast(`${tier.name} added to cart`);
   };
 
   return (

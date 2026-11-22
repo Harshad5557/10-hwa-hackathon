@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, ShoppingCart, Minus, Plus, CheckCircle, Package, Wrench, Zap } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
+import { useToast } from "@/lib/toast-context";
 import { cn } from "@/lib/utils";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { ACCESSORIES, CATEGORY_LABELS } from "@/lib/accessories-data";
@@ -13,6 +14,7 @@ export default function AccessoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { addItem } = useCart();
+  const { showToast } = useToast();
 
   const filteredAccessories = selectedCategory
     ? ACCESSORIES.filter((a) => a.category === selectedCategory)
@@ -31,6 +33,7 @@ export default function AccessoriesPage() {
       quantity: getQuantity(accessory.id),
       image: accessory.image,
     });
+    showToast(`${accessory.name} added to cart`);
   };
 
   const categories = ["replacement", "maintenance", "power"];

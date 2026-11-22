@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User as UserIcon, Clock, Package, Settings, Mail, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { User as UserIcon, Clock, Package, Settings, Mail, Lock, Eye, EyeOff, CheckCircle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Section, SectionHeader, Button } from "@/components/ui";
+import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/lib/toast-context";
 
 type Tab = "signin" | "register" | "profile" | "orders";
 
@@ -14,6 +16,8 @@ const orders = [
 ];
 
 export default function AccountPage() {
+  const { user, isLoggedIn, login, register, logout } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [signInData, setSignInData] = useState({ email: "", password: "" });
@@ -32,7 +36,13 @@ export default function AccountPage() {
       setError("Please enter a valid email address.");
       return;
     }
-    setSuccess("Sign in successful. Welcome back!");
+    const success = login(signInData.email, signInData.password);
+    if (success) {
+      setSuccess("Sign in successful. Welcome back!");
+      showToast("Signed in successfully");
+    } else {
+      setError("Invalid email or password. Password must be at least 8 characters.");
+    }
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -54,7 +64,13 @@ export default function AccountPage() {
       setError("Passwords do not match.");
       return;
     }
-    setSuccess("Account created successfully. You can now sign in.");
+    const success = register(registerData.name, registerData.email, registerData.password);
+    if (success) {
+      setSuccess("Account created successfully. You can now sign in.");
+      showToast("Account created successfully");
+    } else {
+      setError("Registration failed. Please check your information.");
+    }
   };
 
   return (
@@ -63,8 +79,18 @@ export default function AccountPage() {
         <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl font-bold text-white">My account</h1>
-            <p className="text-muted">Manage your profile, orders, and preferences.</p>
+            <p className="text-muted">
+              {isLoggedIn ? `Welcome back, ${user?.name}` : "Manage your profile, orders, and preferences."}
+            </p>
           </div>
+          {isLoggedIn && (
+            <button
+              onClick={() => { logout(); showToast("Signed out successfully"); }}
+              className="flex items-center gap-2 px-6 py-3 border border-white/10 rounded-xl text-muted font-medium hover:text-white hover:bg-white/5 transition-colors"
+            >
+              <LogOut className="w-4 h-4" /> Sign out
+            </button>
+          )}
           <Link href="/" className="px-6 py-3 border border-white/10 rounded-xl text-muted font-medium hover:text-white hover:bg-white/5 transition-colors">
             Continue shopping
           </Link>
