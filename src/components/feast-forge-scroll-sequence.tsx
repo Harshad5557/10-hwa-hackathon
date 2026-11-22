@@ -2,6 +2,10 @@
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
 
+const FRAME_COUNT = 190;
+const FRAME_PATH = (i: number) =>
+  `/frames/frame_${String(i + 1).padStart(3, "0")}.jpg`;
+
 interface ScrollSequenceProps {
   className?: string;
 }
@@ -16,7 +20,11 @@ const CHAPTERS = [
 
 export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imagesRef = useRef<HTMLImageElement[]>([]);
+  const currentFrameRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+  const [loadedCount, setLoadedCount] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [activeChapter, setActiveChapter] = useState(CHAPTERS[0]);
@@ -30,32 +38,103 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Load video metadata
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+  const drawFrame = useCallback((frameIndex: number) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    const img = imagesRef.current[frameIndex];
+    if (!canvas || !ctx || !img || !img.complete || img.naturalWidth === 0) return;
 
-    const handleLoadedMetadata = () => {
-      setIsReady(true);
-      // Seek to first frame
-      video.currentTime = 0;
-    };
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.round(rect.width * dpr);
+    const height = Math.round(rect.height * dpr);
 
-    video.addEventListener("loadedmetadata", handleLoadedMetadata);
-    video.load();
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
 
-    return () => {
-      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-    };
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    const imgAspect = img.naturalWidth / img.naturalHeight;
+    const canvasAspect = width / height;
+    let drawW: number, drawH: number, drawX: number, drawY: number;
+
+    if (imgAspect > canvasAspect) {
+      drawH = height;
+      drawW = height * imgAspect;
+      drawX = (width - drawW) / 2;
+      drawY = 0;
+    } else {
+      drawW = width;
+      drawH = width / imgAspect;
+      drawX = 0;
+      drawY = (height - drawH) / 2;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(img, drawX, drawY, drawW, drawH);
   }, []);
 
-  // Scroll-driven video playback
+  // Preload images with proper decoding
+  useEffect(() => {
+    const images: HTMLImageElement[] = new Array(FRAME_COUNT);
+    let loaded = 0;
+
+    const loadImage = (index: number): Promise<void> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = FRAME_PATH(index);
+        img.onload = async () => {
+          try {
+            await img.decode();
+          } catch {
+            // decode not supported or failed, continue
+          }
+          images[index] = img;
+          loaded++;
+          setLoadedCount(loaded);
+          if (loaded === 1) {
+            drawFrame(0);
+          }
+          if (loaded === FRAME_COUNT) {
+            setIsReady(true);
+          }
+          resolve();
+        };
+        img.onerror = () => {
+          loaded++;
+          setLoadedCount(loaded);
+          resolve();
+        };
+        images[index] = img;
+      });
+    };
+
+    const loadAll = async () => {
+      await loadImage(0);
+      const batchSize = 20;
+      for (let i = 1; i < FRAME_COUNT; i += batchSize) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + batchSize, FRAME_COUNT); j++) {
+          batch.push(loadImage(j));
+        }
+        await Promise.all(batch);
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    };
+
+    loadAll();
+    imagesRef.current = images;
+  }, [drawFrame]);
+
+  // Scroll-driven frame selection
   useEffect(() => {
     if (reducedMotion) return;
 
     const handleScroll = () => {
-      if (!containerRef.current || !videoRef.current) return;
-      const video = videoRef.current;
+      if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const scrollHeight = containerRef.current.scrollHeight - window.innerHeight;
       const scrolled = -rect.top;
@@ -63,15 +142,17 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
 
       setProgress(p);
 
-      // Outro fade: last 5% of scroll
       setOutroOpacity(p > 0.95 ? (p - 0.95) / 0.05 : 0);
 
-      // Seek video to corresponding time
-      if (video.duration && isFinite(video.duration)) {
-        const targetTime = p * video.duration;
-        if (Math.abs(video.currentTime - targetTime) > 0.05) {
-          video.currentTime = targetTime;
-        }
+      const frameIndex = Math.min(
+        FRAME_COUNT - 1,
+        Math.floor(p * (FRAME_COUNT - 1))
+      );
+
+      if (frameIndex !== currentFrameRef.current) {
+        currentFrameRef.current = frameIndex;
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(() => drawFrame(frameIndex));
       }
 
       let chapter = CHAPTERS[0];
@@ -89,21 +170,36 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [reducedMotion, isReady]);
+  }, [drawFrame, reducedMotion]);
 
-  // Reduced motion: show first frame
+  // Draw first frame on mount
   useEffect(() => {
-    if (reducedMotion && videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.pause();
+    const timer = setTimeout(() => {
+      drawFrame(0);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [drawFrame]);
+
+  // Reduced motion: show static assembled frame
+  useEffect(() => {
+    if (reducedMotion) {
+      drawFrame(0);
     }
-  }, [reducedMotion]);
+  }, [reducedMotion, drawFrame]);
+
+  // Draw on resize
+  useEffect(() => {
+    const handleResize = () => drawFrame(currentFrameRef.current);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [drawFrame]);
 
   return (
     <div ref={containerRef} className={`relative ${className ?? ""}`} style={{ height: "500vh" }}>
-      {/* Sticky video container */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-dark-bg">
+      {/* Sticky canvas container */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden bg-dark-bg" style={{ backgroundImage: "url(/frames/frame_001.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
         {/* Subtle radial gradient background */}
         <div
           className="absolute inset-0 pointer-events-none transition-opacity duration-1000"
@@ -112,15 +208,10 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
           }}
         />
 
-        {/* Video element - starts with first frame */}
-        <video
-          ref={videoRef}
-          src="/Product_parts_exploding_into_view.mp4"
-          muted
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-contain"
-          style={{ display: "block" }}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full"
+          style={{ display: "block", backgroundColor: "transparent" }}
         />
 
         {/* Outro fade overlay */}
@@ -136,12 +227,17 @@ export function FeastForgeScrollSequence({ className }: ScrollSequenceProps) {
           <div className="absolute inset-0 flex items-center justify-center bg-dark-bg/80 backdrop-blur-sm">
             <div className="text-center">
               <div className="w-12 h-12 mx-auto mb-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
-              <p className="text-muted text-sm">Loading animation...</p>
+              <p className="text-muted text-sm">
+                Loading sequence... {Math.round((loadedCount / FRAME_COUNT) * 100)}%
+              </p>
+              <p className="text-muted/50 text-xs mt-2">
+                {loadedCount} / {FRAME_COUNT} frames
+              </p>
             </div>
           </div>
         )}
 
-        {/* Chapter text - minimal, positioned at bottom */}
+        {/* Chapter text */}
         <div
           className="absolute inset-0 pointer-events-none flex items-end justify-center pb-20 md:pb-28"
           style={{ opacity: 1 - outroOpacity }}
