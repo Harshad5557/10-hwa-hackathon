@@ -4,12 +4,14 @@
 
 :root {
   --ff-amber: #F59E0B;
+  --ff-amber-dark: #92400E;
   --ff-charcoal: #1C1C1E;
   --ff-dark-bg: #101010;
   --ff-secondary-dark: #171717;
   --ff-cream: #FFF8F0;
   --ff-white: #FFFFFF;
   --ff-muted: #B8B8B8;
+  --ff-muted-dark: #525252;
 
   --ff-font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --ff-font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -23,12 +25,14 @@
 
 @theme {
   --color-amber-500: var(--ff-amber);
+  --color-amber-700: var(--ff-amber-dark);
   --color-charcoal: var(--ff-charcoal);
   --color-dark-bg: var(--ff-dark-bg);
   --color-secondary-dark: var(--ff-secondary-dark);
   --color-cream: var(--ff-cream);
   --color-white: var(--ff-white);
   --color-muted: var(--ff-muted);
+  --color-muted-dark: var(--ff-muted-dark);
 
   --font-sans: var(--ff-font-sans);
   --font-mono: var(--ff-font-mono);
@@ -80,25 +84,21 @@ body {
 .ff-body-lg {
   font-size: clamp(1rem, 1.2vw, 1.25rem);
   line-height: 1.7;
-  color: var(--ff-white);
 }
 
 .ff-body {
   font-size: clamp(0.95rem, 1.1vw, 1.125rem);
   line-height: 1.65;
-  color: var(--ff-white);
 }
 
 .ff-body-sm {
   font-size: 0.875rem;
   line-height: 1.6;
-  color: var(--ff-muted);
 }
 
 .ff-caption {
   font-size: 0.75rem;
   line-height: 1.5;
-  color: var(--ff-muted);
   letter-spacing: 0.04em;
   font-weight: 500;
   text-transform: none;
@@ -107,7 +107,6 @@ body {
 .ff-micro {
   font-size: 0.6875rem;
   line-height: 1.4;
-  color: var(--ff-muted);
   font-weight: 500;
 }
 
@@ -197,21 +196,29 @@ body {
 .section-dark {
   background-color: var(--ff-dark-bg);
   color: var(--ff-white);
+  --muted: var(--ff-muted);
+  --amber-text: var(--ff-amber);
 }
 
 .section-secondary {
   background-color: var(--ff-secondary-dark);
   color: var(--ff-white);
+  --muted: var(--ff-muted);
+  --amber-text: var(--ff-amber);
 }
 
 .section-cream {
   background-color: var(--ff-cream);
-  color: var(--ff-dark-bg);
+  color: var(--ff-charcoal);
+  --muted: var(--ff-muted-dark);
+  --amber-text: var(--ff-amber-dark);
 }
 
 .section-white {
   background-color: var(--ff-white);
-  color: var(--ff-dark-bg);
+  color: var(--ff-charcoal);
+  --muted: var(--ff-muted-dark);
+  --amber-text: var(--ff-amber-dark);
 }
 
 .container {
@@ -248,6 +255,19 @@ body {
 /* Focus visible */
 .btn:focus-visible {
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
+}
+
+/* Section-aware text colors */
+.section-cream .text-muted,
+.section-white .text-muted {
+  color: var(--ff-muted-dark);
+}
+
+.section-cream .text-amber-400,
+.section-white .text-amber-400,
+.section-cream .text-amber-500,
+.section-white .text-amber-500 {
+  color: var(--ff-amber-dark);
 }
 
 /* Fade in animation for chapter text */
