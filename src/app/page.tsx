@@ -10,7 +10,7 @@ import { FeastForgeScrollSequence } from "@/components/feast-forge-scroll-sequen
 
 export default function Home() {
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative">
       {/* Hero - Dark cinematic full screen */}
       <section className="relative min-h-screen flex flex-col justify-center pt-20 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(245,158,11,0.12),transparent_70%)] pointer-events-none" />

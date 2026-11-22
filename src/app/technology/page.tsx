@@ -138,7 +138,7 @@ export default function TechnologyPage() {
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative">
       {/* Scroll sequence hero */}
       <FeastForgeScrollSequence />
 

@@ -46,7 +46,7 @@ body {
   color: var(--ff-white);
   font-family: var(--ff-font-sans);
   font-feature-settings: "cv01", "cv02", "cv11";
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Typography scale */
