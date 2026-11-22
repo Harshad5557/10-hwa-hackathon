@@ -2,9 +2,9 @@
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
 
-const FRAME_COUNT = 238;
+const FRAME_COUNT = 190;
 const FRAME_PATH = (i: number) =>
-  `/frames/ezgif-frame-${String(i + 1).padStart(3, "0")}.jpg`;
+  `/frames/frame_${String(i + 1).padStart(3, "0")}.jpg`;
 
 interface ScrollSequenceProps {
   className?: string;
