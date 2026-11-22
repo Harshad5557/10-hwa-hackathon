@@ -45,6 +45,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={pathname === link.href ? "page" : undefined}
                 className={cn(
                   "text-sm font-medium transition-colors",
                   pathname === link.href ? "text-amber-500" : "text-muted hover:text-white"

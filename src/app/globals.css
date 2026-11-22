@@ -257,6 +257,34 @@ body {
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
 }
 
+/* Global focus indicators for interactive elements */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--ff-amber);
+  outline-offset: 2px;
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 999;
+  padding: 0.75rem 1.5rem;
+  background: var(--ff-amber);
+  color: var(--ff-dark-bg);
+  font-weight: 600;
+  border-radius: var(--ff-radius);
+  transition: top 0.2s ease;
+}
+
+.skip-to-content:focus {
+  top: 1rem;
+}
+
 /* Section-aware text colors */
 .section-cream .text-muted,
 .section-white .text-muted {
