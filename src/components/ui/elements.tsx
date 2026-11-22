@@ -14,7 +14,7 @@ export function Kicker({
     <span
       {...props}
       className={cn(
-        "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[0.75rem] font-semibold tracking-wider uppercase",
+        "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 ff-caption tracking-wide normal-case",
         className
       )}
     >
